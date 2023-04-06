@@ -1,12 +1,27 @@
-#Prerequisiti
-- Installare Docker
+Installazione e configurazione Kong API Gateway
+====
 
-#Installazione e configurazione Kong API Gateway 
-##Introduzione
+.. _installation:
+
+Installation
+------------
+
+Installare Docker
+
+Installazione e configurazione Kong API Gateway 
+====
+
+.. _introduzione
+
+Introduzione
+------------
+
 Il presente documento descrive le procedure di installazione e configurazione di Kong API Gateway e
 delle Sporteca API
 
-## Installing Kong
+Installing Kong
+---------------
+
 Di seguito sono riportati tutti gli **STEP** necessari al completamento dell'installazione e della configurazione del **Kong Gateway** su containers Docker.
 *Per praticità, l'installazione di seguito riportata, fa riferimento ad un installazione in localhost.*
 
