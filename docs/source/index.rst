@@ -15,7 +15,7 @@ Kong is the API Gateway solution chosen for Sporteca. It is a high-performance, 
 Installation Guide
 To install Kong on your system, please refer to the installation guide at:
 
-kong-api-gateway/install-kong-api-gateway
+/kong-api-gateway/install-kong-api-gateway
 
 Sporteca Database
 The Sporteca Database is a crucial component of the Sporteca platform. It stores all the data related to athletes, clubs, events, and other entities. It is designed to be scalable, highly available, and secure.
