@@ -34,7 +34,6 @@ api/sporteca-countries-api
 
 sporteca-database
 
-
 .. toctree::
    :maxdepth: 1
 
