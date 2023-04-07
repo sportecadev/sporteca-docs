@@ -10,9 +10,6 @@ API Gateway is an essential component of the Sporteca platform. It acts as a mid
 
 Kong
 
-python
-Copy code
-
 Kong is the API Gateway solution chosen for Sporteca. It is a high-performance, scalable, and open-source platform that provides all the necessary features to manage the traffic of Sporteca's APIs.
 
 Installation Guide
@@ -32,8 +29,6 @@ The Sporteca API is a set of RESTful endpoints that allow clients to interact wi
 
 sporteca-auth-api
 
-css
-Copy code
 
 The Sporteca Auth API provides endpoints for user authentication and authorization. To learn more about the Sporteca Auth API, please refer to the documentation at:
 
@@ -46,8 +41,6 @@ sporteca-countries-api
 
 sporteca-profiles-api
 
-vbnet
-Copy code
 
 The Sporteca Profiles API provides endpoints for managing user profiles. To learn more about the Sporteca Profiles API, please refer to the documentation at:
 
