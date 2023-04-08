@@ -91,6 +91,8 @@ di amministrazione al fine di poter accedere alle funzionalità del back end. Do
 
 .. image:: images/01_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Una volta effettuato il login sarà necessario definire una **Connection**. Selezionare quindi la voce di menu **Connections** e creare una nuova
 **Connection** tramite il pulsante **New Connection**. Appena viene create è necessario cliccare su ACTIVATE per attivare la connessione e sul menù
@@ -98,15 +100,20 @@ laterale compariranno nuove voci di menù per gestire le impostazioni dei micro-
 
 .. image:: images/02_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Selezionare la voce di menù **Consumers** e cliccare sul pulsante **Create Consumer** per creare un nuovo Consumer.
 
-.. image:: images/03_img.jpg
+.. figure:: images/03_img.jpg
    :alt: screenshot
-
-
-.. image:: images/04_img.jpg
+   :align: center
+   :width: 100%
+   
+.. figure:: images/04_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Definire delle JWT Credential per il consumer appena creato affinché Kong Gateweay possa verificare e validare i token JWT presenti all' interno delle
 richieste inviate dai client. Per fare questo è sufficiente selezionare il comsumer di riferimento dall'archivio dei consumer, selezionare il tab
@@ -114,12 +121,16 @@ richieste inviate dai client. Per fare questo è sufficiente selezionare il coms
 
 .. image:: images/05_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 A questo punto indicare un valore per il campo **algorithm** (ossia l'algoritmo per la firma dei token) e il campo **secret** (ossia la chiave segreta utilizzata
 dal back end per firmare il token JWT).
 
 .. image:: images/06_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
    
 Dopo aver definito uno o più consumer è necessario configurare uno o più services al fini di poter esporre i micro-servizi di Sporteca API. 
 Definiremo un Service per ogni micro-servizio adibito all'accesso di Sporteca API.
@@ -132,10 +143,14 @@ Per definire un servizio, selezionare la voce di menù **services** e cliccare s
 
 .. image:: images/07_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 
 .. image:: images/08_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Per completezza riportiamo un comando da eseguire da terminale per creare un services. Il comando è una semplice chiamata curl alle API di Kong Gateway.
 
@@ -153,6 +168,8 @@ Configurazione service per sporteca-auth
 
 .. image:: images/09_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 *Nota: in questo caso, il valore inserito all' interno del campo host dell'immagine di cui sopra, coincide con l'indirizzo IP del container predisposto.*
 
@@ -166,6 +183,8 @@ Configurazione service per sporteca-profiles
 
 .. image:: images/10_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 *nota: in questo caso, il valore inserito all'interno del campo host dell'immagine di cui sopra, coincide con l'indirizzo IP del contanier predisposto.*
 
@@ -185,16 +204,22 @@ dei servizi (pagina services).
 
 .. image:: images/11_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Selezionare, all'interno della schermata di dettaglio/modifica del service il tab **Plugins** e cliccare sul pulsante **Add Plugin** in alto a destra.
 
 .. image:: images/12_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 In fine, selezionare il plugin che si vuole aggiungere/configurare sul service.
 
 .. image:: images/13_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 .. _configurazione Plugin JWT
 
@@ -214,6 +239,8 @@ Di seguito viene riportata la schermata di configurazione del plugin JWT. Per qu
 
 .. image:: images/14_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 ##Configurazione Plugin JWT
 Di seguito viene riportata la schermata di configurazione del plugin JWT Claims Headers. Per questo plugin è importante definire almeno i seguenti parametri:
@@ -227,6 +254,8 @@ Di seguito viene riportata la schermata di configurazione del plugin JWT Claims 
   
 .. image:: images/15_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 ##Configurazione ACL JWT
 Di seguito viene riportata la schermata di configurazione del plugin ACL. Affinché questo plugin possa essere configurato e attivato
@@ -235,18 +264,24 @@ su un service (o una rotta) è necessario aver definito, preventivamente, uno o 
 
 .. image:: images/16_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Per questo plugin è importante definire almeno i seguenti parametri:
 - **whitelist**: serve ad indicare al plugin quale gruppo di consumers potranno accedere al servizio.
 
 .. image:: images/17_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 ##Configurazione Rate Limiting
 Di seguito viene riportata la schermata di configurazione del plugin Rate Limiting.
 
 .. image:: images/18_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 *Nota: mediamente i parametri di configurazione di questo plugin sarà possibile rallentare/controllare il numero di richieste fatte ad un determinato services/routes*
 
@@ -256,6 +291,8 @@ service dall'archivio dei services e selezionare il tab **Routes** e in fine cli
 
 .. image:: images/19_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Indicare nel form di creazione/modifica un valore per i seguenti parametri principali:
 
@@ -265,6 +302,8 @@ Indicare nel form di creazione/modifica un valore per i seguenti parametri princ
 
 .. image:: images/20_img.jpg
    :alt: screenshot
+   :align: center
+   :width: 100%
 
 Per completezza di seguito riportiamo un comando da eseguire da terminale per la creazione di una rotta. Anche in questo caso il comando 
 è semplicemente una chiamata curl alle API di Kong.
@@ -276,169 +315,191 @@ Per completezza di seguito riportiamo un comando da eseguire da terminale per la
     --data 'name=' \
     --data 'paths[]=/ '
 
-###Sporteca Auth Operations
-- Method POST - /v1/token/refresh
-- Method POST - /v1/public/token/generate
-- Method POST - /v1/public/sing-up
+.. _Kong UI
 
-###Sporteca Countries Operations
-- Method GET - /v1/countries
-- Method GET - /v1/countries/{uuid}
-- Method GET - /v1/provinces
-- Method GET - /v1/provinces/{province-uuid}
-- Method GET - /v1/provinces/{province-uuid}/countries
-- Method GET - /v1/regions
-- Method GET - /v1/regions/{uuid}
-- Method GET - /v1/regions/{region-uuid}/provinces
-- Method GET - /v1/regions/{region-uuid}/countries
+Konga UI
+-------
 
-###Sporteca Profiles Operations
-- Method GET - /v1/companies
-- Method GET - /v1/companies/{uuid}
-- Method GET - /v1/profiles
-- Method GET - /v1/profiles/{uuid}
-- Method GET - /v1/profiles/{uuid}/skills
-- Method GET - /v1/profiles/{uuid}/addresses
-- Method POST - /v1/profiles
-
-###Sporteca Skills Operations
-- Method GET - /v1/roles
-- Method GET - /v1/roles/{uuid}
-- Method GET - /v1/skills
-- Method GET - /v1/skills/{uuid}
-- Method GET - /v1/sports
-- Method GET - /v1/sports/{uuid}
-- Method GET - /v1/sports/{uuid}/skills
-- Method GET - /v1/sports/{uuid}/roles
-
-### KongaUI
 * URL     : http://localhost:1337/
 * username: < username>
 * password: < password>
 
----
-# Installazione ulteriori plugin
+.. _Installazione ulteriori plugin
+
+Installazione ulteriori plugin
+-------
 
 ## JWT Claims Headers Plugin
 
-1. accedere in ssh come root sul container 
-  >docker excec -u root -it <container-name> /bin/bash 
+1. accedere in ssh come root sul container
+
+.. code-block:: console
+
+    docker excec -u root -it <container-name> /bin/bash 
 
 2. scaricare (sul container) il plugin da https://github.com/wshirey/kong-plugin-jwt-claims-headers
-  wget https://github.com/wshirey/kong-plugin-jwt-claims-headers/archive/master.zip
+
+.. code-block:: console
+
+    wget https://github.com/wshirey/kong-plugin-jwt-claims-headers/archive/master.zip
 
 3. unzip del plugin scaricato al punto 2
-  >unzip master.zip
+
+.. code-block:: console
+
+    unzip master.zip
 
 4. Posizionarsi all'interno della directory unzippata e spostare il contenuto della cartella del plugin in  /usr/local/share/lua/5.1/kong/plugins/jwt-claims-headers
-  >mv kong-plugin-jwt-claims-headers-master /usr/local/share/lua/5.1/kong/plugins/jwt-claims-headers
-  >chown -R 1000.1000 jwt-claims-headers
+
+.. code-block:: console
+
+    mv kong-plugin-jwt-claims-headers-master /usr/local/share/lua/5.1/kong/plugins/jwt-claims-headers
+    
+.. code-block:: console
+
+    chown -R 1000.1000 jwt-claims-headers
 
 5. Posizionarsi all'interno della directory /etc/kong/ e creare una copia del file kong.conf.default e rinominarlo in kong.konf
-  >cd /etc/kong
-  >cp kong.conf.default kong.conf
+
+.. code-block:: console
+
+    cd /etc/kong
+
+.. code-block:: console
+    cp kong.conf.default kong.conf
 
 6. Editare il file kong.conf ed aggiungere all'inizio del file la seguente stringa: plugins = bundled,jwt-claims-headers
-  >vi kong.conf
-  >plugins = bundled,jwt-claims-headers
-  >esc :x
+
+.. code-block:: console
+    vi kong.conf
+    
+.. code-block:: console
+    plugins = bundled,jwt-claims-headers
+    
+.. code-block:: console
+   esc :x
 
 7. Riavviare il container
 
 ---
+
 # Dockerizziamo i servizi
 
 ## Sporteca Auth Api
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-auth-api
 
 1. buildare l'immagine del micro-servizio
-> docker build -t sporteca-auth-image .
+.. code-block:: console
+    docker build -t sporteca-auth-image .
 
 2. eseguire l'immagine mediante un container
-> docker run --name sporteca-auth-container --network=kong-net -p 8081:8080 sporteca-auth-image
+.. code-block:: console
+    docker run --name sporteca-auth-container --network=kong-net -p 8081:8080 sporteca-auth-image
 
 3. Recuperare l'indirizzo IP del container necessario per la configurazione del service sull'API Gateway
-> docker network inspect kong-net
+.. code-block:: console
+    docker network inspect kong-net
 
 4. Configurare un service sull'API Gateway che punti al microservizio sporteca-auth (mediante una chiamata alle API di Kong o tramite Konga UI)
-> curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-auth-service-v1' --data 'url=http://172.19.0.6:8080/'
+.. code-block:: console
+    curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-auth-service-v1' --data 'url=http://172.19.0.6:8080/'
 
 **Nota**: in **--data 'url=<provide-container-ip>'** deve essere inserito l'indirizzo IP del container di sporteca-auth-image.
 
 5. Associare una route al service definito sull'API Gateway (mediante una chiamata alle API di Kong o tramite Konga UI).
-> curl -i -X POST  --url http://localhost:8001/services/sporteca-auth-service-v1/routes --data 'name=sporteca-auth-route-v1' --data 'paths[]=/sporteca-auth'
+.. code-block:: console
+    curl -i -X POST  --url http://localhost:8001/services/sporteca-auth-service-v1/routes --data 'name=sporteca-auth-route-v1' --data 'paths[]=/sporteca-auth'
 
 6. Una volta completata la configurazione del service e della route sarà possibile interrogare il micro servizio attraverso l'API Gateway mediante le seguenti operation:
-http://localhost:8000/sporteca-auth-v1/swagger-ui.html
+.. code-block:: console
+    http://localhost:8000/sporteca-auth-v1/swagger-ui.html
 
 ## Sporteca Countries Api
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-countries-api
 
 1. buildare l'immagine del micro-servizio
-> docker build -t sporteca-countries-image .
+.. code-block:: console
+    docker build -t sporteca-countries-image .
 
 2. eseguire l'immagine mediante un container
-> docker run --name sporteca-countries-container --network=kong-net -p 8082:8080 sporteca-countries-image
+.. code-block:: console
+    docker run --name sporteca-countries-container --network=kong-net -p 8082:8080 sporteca-countries-image
 
 3. Recuperare l'indirizzo IP del container necessario per la configurazione del service sull'API Gateway
-> docker network inspect kong-net
+.. code-block:: console
+    docker network inspect kong-net
 
 4. Configurare un service sull'API Gateway che punti al microservizio sporteca-auth (mediante una chiamata alle API di Kong o tramite Konga UI)
-> curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-countries-service-v1' --data 'url=http://172.19.0.6:8080/'
+.. code-block:: console
+    curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-countries-service-v1' --data 'url=http://172.19.0.6:8080/'
 
 **Nota**: in **--data 'url=<provide-container-ip>'** deve essere inserito l'indirizzo IP del container di sporteca-countries-image.
 
 5. Associare una route al service definito sull'API Gateway (mediante una chiamata alle API di Kong o tramite Konga UI).
-> curl -i -X POST  --url http://localhost:8001/services/sporteca-countries-service-v1/routes --data 'name=sporteca-countries-route-v1' --data 'paths[]=/sporteca-countries'
+.. code-block:: console
+    curl -i -X POST  --url http://localhost:8001/services/sporteca-countries-service-v1/routes --data 'name=sporteca-countries-route-v1' --data 'paths[]=/sporteca-countries'
 
 6. Una volta completata la configurazione del service e della route sarà possibile interrogare il micro servizio attraverso l'API Gateway mediante le seguenti operation:
-   http://localhost:8000/sporteca-countries/swagger-ui.html
+.. code-block:: console
+    http://localhost:8000/sporteca-countries/swagger-ui.html
 
 ## Sporteca Profile Api
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-profile-api
 
 1. buildare l'immagine del micro-servizio
-> docker build -t sporteca-profile-image .
+.. code-block:: console
+    docker build -t sporteca-profile-image .
 
 2. deployare ed eseguire l'immagine su un container docker
-> docker run --name sporteca-profile-container --network=kong-net -p 8083:8080 sporteca-profile-image
+.. code-block:: console
+    docker run --name sporteca-profile-container --network=kong-net -p 8083:8080 sporteca-profile-image
 
 3. Recuperare l'indirizzo IP del container necessario per la configurazione del service sull'API Gateway
-> docker network inspect kong-net
+.. code-block:: console
+    docker network inspect kong-net
 
 4. Configurare un service sull'API Gateway che punti al micro-servizio sporteca-profile (mediante una chiamata alle API di Kong o tramite Konga UI)
-> curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-profile-service-v1' --data 'url=http://172.19.0.7:8080/'
+.. code-block:: console
+    curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-profile-service-v1' --data 'url=http://172.19.0.7:8080/'
 
 **Nota**: in **--data 'url=<provide-container-ip>'** deve essere inserito l'indirizzo IP del container di sporteca-profile-image.
 
 5. Associare una route al service definito sull'API Gateway (mediante una chiamata alle API di Kong o tramite Konga UI).
-> curl -i -X POST  --url http://localhost:8001/services/sporteca-profile-service-v1/routes --data 'name=sporteca-profile-route-v1' --data 'paths[]=/sporteca-profile'
+.. code-block:: console
+    curl -i -X POST  --url http://localhost:8001/services/sporteca-profile-service-v1/routes --data 'name=sporteca-profile-route-v1' --data 'paths[]=/sporteca-profile'
 
 6. Una volta completata la configurazione del service e della route sarà possibile interrogare il micro servizio attraverso l'API Gateway mediante le seguenti operation:
-   http://localhost:8000/sporteca-profile/swagger-ui.html
+.. code-block:: console
+    http://localhost:8000/sporteca-profile/swagger-ui.html
 
 ## Sporteca Skills Api
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-skills-api
 
 1. buildare l'immagine del micro-servizio
-> docker build -t sporteca-skills-image .
+.. code-block:: console
+    docker build -t sporteca-skills-image .
 
 2. deployare ed eseguire l'immagine su un container docker
-> docker run --name sporteca-skills-container --network=kong-net -p 8084:8080 sporteca-skills-image
+.. code-block:: console
+    docker run --name sporteca-skills-container --network=kong-net -p 8084:8080 sporteca-skills-image
 
 3. Recuperare l'indirizzo IP del container necessario per la configurazione del service sull'API Gateway
-> docker network inspect kong-net
+.. code-block:: console
+    docker network inspect kong-net
 
 4. Configurare un service sull'API Gateway che punti al micro-servizio sporteca-skills (mediante una chiamata alle API di Kong o tramite Konga UI)
-> curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-skills-service-v1' --data 'url=http://172.19.0.8:8080/'
+.. code-block:: console
+    curl -i -X POST --url http://localhost:8001/services/ --data 'name=sporteca-skills-service-v1' --data 'url=http://172.19.0.8:8080/'
 
 **Nota**: in **--data 'url=<provide-container-ip>'** deve essere inserito l'indirizzo IP del container di sporteca-skills-image.
 
 5. Associare una route al service definito sull'API Gateway (mediante una chiamata alle API di Kong o tramite Konga UI).
-> curl -i -X POST  --url http://localhost:8001/services/sporteca-skills-service-v1/routes --data 'name=sporteca-skills-route-v1' --data 'paths[]=/sporteca-skills'
+.. code-block:: console
+    curl -i -X POST  --url http://localhost:8001/services/sporteca-skills-service-v1/routes --data 'name=sporteca-skills-route-v1' --data 'paths[]=/sporteca-skills'
 
 6. Una volta completata la configurazione del service e della route sarà possibile interrogare il micro servizio attraverso l'API Gateway mediante le seguenti operation:
-   http://localhost:8000/sporteca-skills/swagger-ui.html
+.. code-block:: console
+    http://localhost:8000/sporteca-skills/swagger-ui.html
 
 ---
 
@@ -447,16 +508,26 @@ http://localhost:8000/sporteca-auth-v1/swagger-ui.html
 - Tramite konga creare un consumer e associare delle JWT credential (indicando key e secret)
 
 - comando per attivare il plugin JWT su un service
-> curl -X POST http://localhost:8001/services/sporteca-profile-service-v1/plugins \
+
+.. code-block:: console
+
+    curl -X POST http://localhost:8001/services/sporteca-profile-service-v1/plugins \
     --data "name=jwt"
 
+
 - comando per attivare il plugin di JWT su una rotta
-> curl -X POST http://localhost:8001/routes/sporteca-profile-route-v1/plugins \
-    --data "name=jwt" 
+.. code-block:: console
+
+    curl -X POST http://localhost:8001/routes/sporteca-profile-route-v1/plugins \
+    --data "name=jwt"
+
 
 - comando per attivare il plugin JWT CLAIMS HEADER su un service
->curl -X POST http://localhost:8001/services/sporteca-profile-service-v1/plugins \
->  --data "name=kong-plugin-jwt-claims-headers" \
->  --data "config.uri_param_names=jwt" \
->  --data "config.claims_to_include=.*" \
->  --data "config.continue_on_error=true"
+.. code-block:: console
+
+    curl -X POST http://localhost:8001/services/sporteca-profile-service-v1/plugins \
+    --data "name=kong-plugin-jwt-claims-headers" \
+    --data "config.uri_param_names=jwt" \
+    --data "config.claims_to_include=.*" \
+    --data "config.continue_on_error=true"
+
