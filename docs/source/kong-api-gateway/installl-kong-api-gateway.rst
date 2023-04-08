@@ -1,18 +1,17 @@
 Kong API Gateway 
 ================
 
+.. _prerequisiti:
+
 Prerequisiti
 ------------
 
 - Docker
 
-Installazione e configurazione Kong API Gateway
------------------------------------------------
-
 .. _introduzione
 
-Introduzione
-------------
+Installazione e configurazione Kong API Gateway
+-----------------------------------------------
 
 Il presente documento descrive le procedure di installazione e configurazione di Kong API Gateway e delle Sporteca API
 
@@ -28,66 +27,84 @@ Di seguito sono riportati tutti gli **STEP** necessari al completamento dell'ins
 
 .. code-block:: console
 
-  docker network create kong-net
+    docker network create kong-net
 
 **STEP 2** - Predisporre un container in cui deployare Postgres su cui configurare il database utilizzato da Kong Gateway
 
 .. code-block:: console
 
-  docker run -d --name kong-database --network=kong-net -p 5432:5432 -e “POSTGRES_USER=kong” -e “POSTGRES_DB=kong” -e "POSTGRES_PASSWORD=kong" postgres:9.6
+    docker run -d --name kong-database --network=kong-net -p 5432:5432 -e “POSTGRES_USER=kong” -e “POSTGRES_DB=kong” -e "POSTGRES_PASSWORD=kong" postgres:9.6
 
 **STEP 3** - Configurare il database "**kong-database**" sul container definito allo STEP 2
 
 .. code-block:: console
 
-docker run --rm --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" kong:latest kong migrations bootstrap
+    docker run --rm --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" kong:latest kong migrations bootstrap
 
 **STEP 4** - Predisporre un container in cui deployare l' ultima istanza di Kong Gateway
 
 .. code-block:: console
-docker run -d --name kong --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" -e "KONG_PROXY_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl" -p 8000:8000 -p 8443:8443 -p 127.0.0.1:8001:8001 -p 127.0.0.1:8444:8444 kong:latest
+
+    docker run -d --name kong --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" -e "KONG_PROXY_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl" -p 8000:8000 -p 8443:8443 -p 127.0.0.1:8001:8001 -p 127.0.0.1:8444:8444 kong:latest
 
 .. code-block:: console
-curl -i http://localhost:8001/
+
+    curl -i http://localhost:8001/
 
 .. code-block:: console
-curl -i http://localhost:8000/
 
-## Installing Konga
-.. code-block:: console
-docker run -d -p 1337:1337 --network=kong-net --name konga -v <path-to-kongdata>/kongadata:/app/kongadata -e "NODE_ENV=production" pantsel/konga
+    curl -i http://localhost:8000/
 
-.. code-block:: console
-docker run --rm --network=kong-net pantsel/konga -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
+.. _installazione konga
 
-.. code-block:: console
-docker run --rm --network=kong-net pantsel/konga:latest -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
+Installing Konga
+----------------
 
 .. code-block:: console
-docker run -p 1337:1337 --network=kong-net -e "DB_ADAPTER=postgres" -e "DB_HOST=kong-database" -e "DB_USER=kong" -e "DB_DATABASE=konga_db" -e "KONGA_HOOK_TIMEOUT=120000" -e "NODE_ENV=production" --name konga pantsel/konga
+
+    docker run -d -p 1337:1337 --network=kong-net --name konga -v <path-to-kongdata>/kongadata:/app/kongadata -e "NODE_ENV=production" pantsel/konga
+
+.. code-block:: console
+
+    docker run --rm --network=kong-net pantsel/konga -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
+
+.. code-block:: console
+
+    docker run --rm --network=kong-net pantsel/konga:latest -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
+
+.. code-block:: console
+
+    docker run -p 1337:1337 --network=kong-net -e "DB_ADAPTER=postgres" -e "DB_HOST=kong-database" -e "DB_USER=kong" -e "DB_DATABASE=konga_db" -e "KONGA_HOOK_TIMEOUT=120000" -e "NODE_ENV=production" --name konga pantsel/konga
 
 **Importante**: Sostituire a <**path-to-kongdata**> (presente nel primo comando del blocco di cui sopra) un path del server/macchina host in cui storare i kongdata.
 
-###Configurazione Kong API Gateway
+.. _configurazione kong api gateway
+
+Configurazione Kong API Gateway
+------------------------------
 Dopo aver terminato la procedura di installazione di Kong Gateway è possibile procedere alla relativa configurazione. Assumiamo quindi che tutti 
 i containers definiti all'interno della procedura di installazione siano stati avviati.
 
 Aprire un qualsiasi browser e digitare la seguente url http://localhost:1337/ per accedere all'UI di Konga. Al primo avvio sarà necessario creare un account
 di amministrazione al fine di poter accedere alle funzionalità del back end. Dopo aver creato l'account di amministrazione eseguire l'accesso.
 
-![screenshot](images/01_img.jpg)
+.. image:: images/01_img.jpg
+   :alt: screenshot
 
 Una volta effettuato il login sarà necessario definire una **Connection**. Selezionare quindi la voce di menu **Connections** e creare una nuova
 **Connection** tramite il pulsante **New Connection**. Appena viene create è necessario cliccare su ACTIVATE per attivare la connessione e sul menù
 laterale compariranno nuove voci di menù per gestire le impostazioni dei micro-servizi.
 
-![screenshot](images/02_img.jpg)
+.. image:: images/02_img.jpg
+   :alt: screenshot
 
 Selezionare la voce di menù **Consumers** e cliccare sul pulsante **Create Consumer** per creare un nuovo Consumer.
 
-![screenshot](images/03_img.jpg)
+.. image:: images/03_img.jpg
+   :alt: screenshot
 
-![screenshot](images/04_img.jpg)
+.. image:: images/04_img.jpg
+   :alt: screenshot
 
 Definire delle JWT Credential per il consumer appena creato affinché Kong Gateweay possa verificare e validare i token JWT presenti all' interno delle
 richieste inviate dai client. Per fare questo è sufficiente selezionare il comsumer di riferimento dall'archivio dei consumer, selezionare il tab
