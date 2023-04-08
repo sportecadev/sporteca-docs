@@ -8,6 +8,10 @@ Sporteca Auth
 
 Sporteca Auth API provides authentication and authorization services for accessing Sporteca's platform. With this API, users can securely access Sporteca's services and resources using their credentials.
 
+For more information link: `sporteca-auth.rtf`_.
+
+.. _sporteca-auth.rtf: sporteca-auth/sporteca-auth.rtf
+
 Sporteca Profile
 ----------------
 
