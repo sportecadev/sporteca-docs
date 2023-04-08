@@ -318,7 +318,7 @@ Per completezza di seguito riportiamo un comando da eseguire da terminale per la
 .. _Kong UI
 
 Konga UI
--------
+--------
 
 * URL     : http://localhost:1337/
 * username: < username>
@@ -327,7 +327,7 @@ Konga UI
 .. _Installazione ulteriori plugin
 
 Installazione ulteriori plugin
--------
+------------------------------
 
 ## JWT Claims Headers Plugin
 
@@ -381,11 +381,11 @@ Installazione ulteriori plugin
 
 7. Riavviare il container
 
----
+-----
 
 # Dockerizziamo i servizi
 
-## Sporteca Auth Api
+##Sporteca Auth Api
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-auth-api
 
 1. buildare l'immagine del micro-servizio
@@ -501,9 +501,9 @@ Installazione ulteriori plugin
 .. code-block:: console
     http://localhost:8000/sporteca-skills/swagger-ui.html
 
----
+-----
 
-## Configuriamo consumer, servizi e plugin dell'API Gateway
+##Configuriamo consumer, servizi e plugin dell'API Gateway
 
 - Tramite konga creare un consumer e associare delle JWT credential (indicando key e secret)
 
@@ -530,4 +530,3 @@ Installazione ulteriori plugin
     --data "config.uri_param_names=jwt" \
     --data "config.claims_to_include=.*" \
     --data "config.continue_on_error=true"
-
