@@ -242,7 +242,9 @@ Di seguito viene riportata la schermata di configurazione del plugin JWT. Per qu
    :align: center
    :width: 100%
 
-##Configurazione Plugin JWT
+Configurazione Plugin JWT
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Di seguito viene riportata la schermata di configurazione del plugin JWT Claims Headers. Per questo plugin è importante definire almeno i seguenti parametri:
 
 - **uri param names**: serve ad indicare al plugin dove ricercare il token JWT all'interno della query string di una richiesta. 
@@ -257,7 +259,9 @@ Di seguito viene riportata la schermata di configurazione del plugin JWT Claims 
    :align: center
    :width: 100%
 
-##Configurazione ACL JWT
+Configurazione ACL JWT
+^^^^^^^^^^^^^^^^^^^^^^
+
 Di seguito viene riportata la schermata di configurazione del plugin ACL. Affinché questo plugin possa essere configurato e attivato
 su un service (o una rotta) è necessario aver definito, preventivamente, uno o più gruppi di consumer. Per definire un gruppo di consumer
 è sufficiente accedere alla schermata di modifica di un consumer, selezionare il tab group, e cliccare sul pulsante **Add group**.
@@ -275,7 +279,9 @@ Per questo plugin è importante definire almeno i seguenti parametri:
    :align: center
    :width: 100%
 
-##Configurazione Rate Limiting
+Configurazione Rate Limiting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Di seguito viene riportata la schermata di configurazione del plugin Rate Limiting.
 
 .. image:: images/18_img.jpg
@@ -329,7 +335,8 @@ Konga UI
 Installazione ulteriori plugin
 ------------------------------
 
-### JWT Claims Headers Plugin
+JWT Claims Headers Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. accedere in ssh come root sul container
 
@@ -386,7 +393,9 @@ Installazione ulteriori plugin
 Dockerizziamo i servizi
 _______________________
 
-### Sporteca Auth Api
+
+Sporteca Auth Api
+^^^^^^^^^^^^^^^^^^^^^
 
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-auth-api
 
@@ -428,7 +437,8 @@ _______________________
 
     http://localhost:8000/sporteca-auth-v1/swagger-ui.html
 
-## Sporteca Countries Api
+Sporteca Countries Api
+^^^^^^^^^^^^^^^^^^^^^^
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-countries-api
 
 1. buildare l'immagine del micro-servizio
@@ -469,7 +479,8 @@ _______________________
 
     http://localhost:8000/sporteca-countries/swagger-ui.html
 
-### Sporteca Profile Api
+Sporteca Profile Api
+^^^^^^^^^^^^^^^^^^^^
 
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-profile-api
 
@@ -511,7 +522,8 @@ _______________________
 
     http://localhost:8000/sporteca-profile/swagger-ui.html
 
-### Sporteca Skills Api
+Sporteca Skills Api
+^^^^^^^^^^^^^^^^^^^
 
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-skills-api
 
@@ -555,7 +567,8 @@ _______________________
 
 ----------
 
-### Configuriamo consumer, servizi e plugin dell'API Gateway
+Configuriamo consumer, servizi e plugin dell'API Gateway
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Tramite konga creare un consumer e associare delle JWT credential (indicando key e secret)
 
