@@ -1,23 +1,22 @@
+Kong API Gateway 
+================
+
 Prerequisiti
-============
-
-.. _installation:
-
-Installation
 ------------
 
-Installare Docker
+- Docker
 
-Installazione e configurazione Kong API Gateway 
-===============================================
+Installazione e configurazione Kong API Gateway
+-----------------------------------------------
 
 .. _introduzione
 
 Introduzione
 ------------
 
-Il presente documento descrive le procedure di installazione e configurazione di Kong API Gateway e
-delle Sporteca API
+Il presente documento descrive le procedure di installazione e configurazione di Kong API Gateway e delle Sporteca API
+
+.. _installazione kong
 
 Installing Kong
 ---------------
@@ -28,12 +27,14 @@ Di seguito sono riportati tutti gli **STEP** necessari al completamento dell'ins
 **STEP 1** - Creare una network che verrà successivamente utilizzata dai vari containers che andremo a definire durante questa procedura
 
 .. code-block:: console
-docker network create kong-net
+
+  docker network create kong-net
 
 **STEP 2** - Predisporre un container in cui deployare Postgres su cui configurare il database utilizzato da Kong Gateway
 
 .. code-block:: console
-docker run -d --name kong-database --network=kong-net -p 5432:5432 -e “POSTGRES_USER=kong” -e “POSTGRES_DB=kong” -e "POSTGRES_PASSWORD=kong" postgres:9.6
+
+  docker run -d --name kong-database --network=kong-net -p 5432:5432 -e “POSTGRES_USER=kong” -e “POSTGRES_DB=kong” -e "POSTGRES_PASSWORD=kong" postgres:9.6
 
 **STEP 3** - Configurare il database "**kong-database**" sul container definito allo STEP 2
 
