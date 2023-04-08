@@ -15,6 +15,5 @@ Contents
 
 .. toctree::
 
-   usage
-   api
    kong-api-gateway/installl-kong-api-gateway
+   sporteca-api/sporteca-api
