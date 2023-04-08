@@ -1,0 +1,4 @@
+Sporteca Administration
+=======================
+
+Sporteca Administration is a powerful management platform built using Angular, designed to provide seamless access to all back-office functionalities for users. The platform offers a comprehensive suite of features that are tailored to meet the unique needs of administrators and enable them to manage their resources with ease. With Sporteca Administration, users can easily manage athlete profiles, track payments, monitor training programs, and more. The platform's user-friendly interface and customizable features make it an ideal choice for companies and organizations looking to streamline their administrative tasks and increase productivity. Whether you are a manager looking to optimize your organization's workflow or an administrator seeking to manage resources more efficiently, Sporteca Administration is the perfect solution for you.

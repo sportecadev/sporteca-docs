@@ -1,0 +1,4 @@
+Sporteca APP
+=====
+
+Sporteca is a versatile mobile application built using Flutter, designed to cater to the needs of companies and amateur athletes alike. The app provides a comprehensive suite of features that are tailored to help users achieve their fitness goals and enhance their overall well-being. With Sporteca, users can easily access a variety of training programs, track their progress, and connect with other athletes in the community. The app's user-friendly interface and customizable features make it an ideal choice for companies looking to promote wellness and fitness among their employees. Whether you are an amateur athlete looking to take your training to the next level or a company looking to improve employee wellness, Sporteca is the perfect solution for you.
