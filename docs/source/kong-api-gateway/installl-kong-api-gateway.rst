@@ -81,7 +81,8 @@ Installing Konga
 .. _configurazione kong api gateway
 
 Configurazione Kong API Gateway
-------------------------------
+-------------------------------
+
 Dopo aver terminato la procedura di installazione di Kong Gateway è possibile procedere alla relativa configurazione. Assumiamo quindi che tutti 
 i containers definiti all'interno della procedura di installazione siano stati avviati.
 
@@ -103,6 +104,7 @@ Selezionare la voce di menù **Consumers** e cliccare sul pulsante **Create Cons
 .. image:: images/03_img.jpg
    :alt: screenshot
 
+
 .. image:: images/04_img.jpg
    :alt: screenshot
 
@@ -110,13 +112,15 @@ Definire delle JWT Credential per il consumer appena creato affinché Kong Gatew
 richieste inviate dai client. Per fare questo è sufficiente selezionare il comsumer di riferimento dall'archivio dei consumer, selezionare il tab
 **Credentials**, selezionare la tipologia di credential denominata **JWT** (posizione in alto a destra).
 
-![screenshot](images/05_img.jpg)
+.. image:: images/05_img.jpg
+   :alt: screenshot
 
 A questo punto indicare un valore per il campo **algorithm** (ossia l'algoritmo per la firma dei token) e il campo **secret** (ossia la chiave segreta utilizzata
 dal back end per firmare il token JWT).
 
-![screenshot](images/06_img.jpg)
-
+.. image:: images/06_img.jpg
+   :alt: screenshot
+   
 Dopo aver definito uno o più consumer è necessario configurare uno o più services al fini di poter esporre i micro-servizi di Sporteca API. 
 Definiremo un Service per ogni micro-servizio adibito all'accesso di Sporteca API.
 
@@ -126,28 +130,42 @@ del paragrafo di installazione.
 
 Per definire un servizio, selezionare la voce di menù **services** e cliccare sul pulsante **Add new Service**.
 
-![screenshot](images/07_img.jpg)
+.. image:: images/07_img.jpg
+   :alt: screenshot
 
-![screenshot](images/08_img.jpg)
+
+.. image:: images/08_img.jpg
+   :alt: screenshot
 
 Per completezza riportiamo un comando da eseguire da terminale per creare un services. Il comando è una semplice chiamata curl alle API di Kong Gateway.
->curl -i -X POST \
->--url http://localhost:8001/services/ \
->--data 'name=<name-of-service>' \
->--data 'url=<ip-port-of-service>'
 
-###Configurazione service per sporteca-auth
+.. code-block:: console
 
-![screenshot](images/09_img.jpg)
+    curl -i -X POST \
+    --url http://localhost:8001/services/ \
+    --data 'name=<name-of-service>' \
+    --data 'url=<ip-port-of-service>'
+
+.. _configurazione service per sporteca-auth
+
+Configurazione service per sporteca-auth
+----------------------------------------
+
+.. image:: images/09_img.jpg
+   :alt: screenshot
 
 *Nota: in questo caso, il valore inserito all' interno del campo host dell'immagine di cui sopra, coincide con l'indirizzo IP del container predisposto.*
 
 Tutte le richieste intercettate di cui sopra verranno smistate al micro servizio **sporteca-auth** che espone le funzionalità di autenticazione,
 pertanto sarà l'unico service configurato all'interno dell'API Gateway non protetto da token JWT.
 
-###Configurazione service per sporteca-profiles
+.. _configurazione service per sporteca-profiles
 
-![screenshot](images/10_img.jpg)
+Configurazione service per sporteca-profiles
+--------------------------------------------
+
+.. image:: images/10_img.jpg
+   :alt: screenshot
 
 *nota: in questo caso, il valore inserito all'interno del campo host dell'immagine di cui sopra, coincide con l'indirizzo IP del contanier predisposto.*
 
@@ -156,6 +174,7 @@ dati legati principalmente ad uno specifico utente Sporteca. Per questo motivo �
 ai dati al fine di evitare che questi vengano esposti in modo non sicuro.
 
 Per questa tipologia di servizi sarà quindi necessario attivare e configurare i seguenti plugin:
+
 - JWT
 - JWT Claim Headers
 - ACL
@@ -164,53 +183,70 @@ Per questa tipologia di servizi sarà quindi necessario attivare e configurare i
 In generale, per attivare un plugin su un service, è sufficiente selezionare il servizio su cui configurare il plugin all'interno dell'archivio
 dei servizi (pagina services).
 
-![screenshot](images/11_img.jpg)
+.. image:: images/11_img.jpg
+   :alt: screenshot
 
 Selezionare, all'interno della schermata di dettaglio/modifica del service il tab **Plugins** e cliccare sul pulsante **Add Plugin** in alto a destra.
 
-![screenshot](images/12_img.jpg)
+.. image:: images/12_img.jpg
+   :alt: screenshot
 
 In fine, selezionare il plugin che si vuole aggiungere/configurare sul service.
 
-![screenshot](images/13_img.jpg)
+.. image:: images/13_img.jpg
+   :alt: screenshot
 
-##Configurazione Plugin JWT
+.. _configurazione Plugin JWT
+
+Configurazione Plugin JWT
+-------------------------
+
 Di seguito viene riportata la schermata di configurazione del plugin JWT. Per questo plugin è importante definire almeno i seguenti parametri:
+
 - **uri param names**: serve ad indicare al plugin dove ricercare il token JWT all'interno della query string di una richiesta. 
   All'interno di questo parametro di configurazione sarà possibile definire il/i nome/i del parametro della query string che accoglierà
   il token jwt (es: jwt, token).
+  
 - **headers names**: serve ad indicare al plugin in quale header di una richiesta troverà il toke JWT. All'interno di questo parametro di
   configurazione sarà possibile definire il/i nome/i degli headers i cui ricercare il token (es: authorization).
+  
 - **key claim name**: serve ad indicare al plugin quali claims dovranno essere presenti all'interno del token JWT (es: iss).
 
-![screenshot](images/14_img.jpg)
+.. image:: images/14_img.jpg
+   :alt: screenshot
 
 ##Configurazione Plugin JWT
 Di seguito viene riportata la schermata di configurazione del plugin JWT Claims Headers. Per questo plugin è importante definire almeno i seguenti parametri:
+
 - **uri param names**: serve ad indicare al plugin dove ricercare il token JWT all'interno della query string di una richiesta. 
   All'interno di questo parametro di configurazione sarà possibile definire il/i nome/i del parametro della query string che accoglierà il
   token jwt (es: jwt, token).
+  
 - **claims to include**: serve a specificare quali claims del token JWT dovranno essere processati dal plugin. Il valore di default è ".*".
   Lasciando il valore di default il plugin scompatterà ed invierà tutti gli header contenuti nel token.
   
-![screenshot](images/15_img.jpg)
+.. image:: images/15_img.jpg
+   :alt: screenshot
 
 ##Configurazione ACL JWT
 Di seguito viene riportata la schermata di configurazione del plugin ACL. Affinché questo plugin possa essere configurato e attivato
 su un service (o una rotta) è necessario aver definito, preventivamente, uno o più gruppi di consumer. Per definire un gruppo di consumer
 è sufficiente accedere alla schermata di modifica di un consumer, selezionare il tab group, e cliccare sul pulsante **Add group**.
 
-![screenshot](images/16_img.jpg)
+.. image:: images/16_img.jpg
+   :alt: screenshot
 
 Per questo plugin è importante definire almeno i seguenti parametri:
 - **whitelist**: serve ad indicare al plugin quale gruppo di consumers potranno accedere al servizio.
 
-![screenshot](images/17_img.jpg)
+.. image:: images/17_img.jpg
+   :alt: screenshot
 
 ##Configurazione Rate Limiting
 Di seguito viene riportata la schermata di configurazione del plugin Rate Limiting.
 
-![screenshot](images/18_img.jpg)
+.. image:: images/18_img.jpg
+   :alt: screenshot
 
 *Nota: mediamente i parametri di configurazione di questo plugin sarà possibile rallentare/controllare il numero di richieste fatte ad un determinato services/routes*
 
@@ -218,21 +254,27 @@ L'ultimo STEP necessario per completare la configurazione dell'API Gateway consi
 precedentemente. Per definire una nuova rotta è sufficiente e contestualmente abbinarla ad un service è sufficiente selezionare un 
 service dall'archivio dei services e selezionare il tab **Routes** e in fine cliccare sul pulsante **Add route**.
 
-![screenshot](images/19_img.jpg)
+.. image:: images/19_img.jpg
+   :alt: screenshot
 
 Indicare nel form di creazione/modifica un valore per i seguenti parametri principali:
+
 - **name**: identifica il nome della rotta all'interno della configurazione dell'API Gateway.
+
 - **paths**: identifica un path con il quale quella rotta potrà essere richiamata dall'esterno.
 
-![screenshot](images/20_img.jpg)
+.. image:: images/20_img.jpg
+   :alt: screenshot
 
 Per completezza di seguito riportiamo un comando da eseguire da terminale per la creazione di una rotta. Anche in questo caso il comando 
 è semplicemente una chiamata curl alle API di Kong.
 
->curl -i -X POST \
->--url http://localhost:8081/services/..\
->--data 'name=' \
->--data 'paths[]=/ '
+.. code-block:: console
+
+    curl -i -X POST \
+    --url http://localhost:8081/services/..\
+    --data 'name=' \
+    --data 'paths[]=/ '
 
 ###Sporteca Auth Operations
 - Method POST - /v1/token/refresh
