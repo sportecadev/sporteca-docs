@@ -388,14 +388,13 @@ JWT Claims Headers Plugin
 
 7. Riavviare il container
 
-----------
+
 
 Dockerizziamo i servizi
-_______________________
-
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Sporteca Auth Api
-^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""
 
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-auth-api
 
@@ -438,7 +437,8 @@ Sporteca Auth Api
     http://localhost:8000/sporteca-auth-v1/swagger-ui.html
 
 Sporteca Countries Api
-^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""
+
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-countries-api
 
 1. buildare l'immagine del micro-servizio
@@ -480,7 +480,7 @@ Sporteca Countries Api
     http://localhost:8000/sporteca-countries/swagger-ui.html
 
 Sporteca Profile Api
-^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""
 
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-profile-api
 
@@ -523,7 +523,7 @@ Sporteca Profile Api
     http://localhost:8000/sporteca-profile/swagger-ui.html
 
 Sporteca Skills Api
-^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""
 
 **Nota**: posizionarsi all'interno della directory di progetto sporteca-skills-api
 
@@ -564,8 +564,6 @@ Sporteca Skills Api
 .. code-block:: console
 
     http://localhost:8000/sporteca-skills/swagger-ui.html
-
-----------
 
 Configuriamo consumer, servizi e plugin dell'API Gateway
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
