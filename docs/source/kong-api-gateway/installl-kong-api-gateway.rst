@@ -1,5 +1,5 @@
-Installazione e configurazione Kong API Gateway
-====
+Prerequisiti
+============
 
 .. _installation:
 
@@ -9,7 +9,7 @@ Installation
 Installare Docker
 
 Installazione e configurazione Kong API Gateway 
-====
+===============================================
 
 .. _introduzione
 
@@ -26,29 +26,44 @@ Di seguito sono riportati tutti gli **STEP** necessari al completamento dell'ins
 *Per praticità, l'installazione di seguito riportata, fa riferimento ad un installazione in localhost.*
 
 **STEP 1** - Creare una network che verrà successivamente utilizzata dai vari containers che andremo a definire durante questa procedura
->docker network create kong-net
+
+.. code-block:: console
+docker network create kong-net
 
 **STEP 2** - Predisporre un container in cui deployare Postgres su cui configurare il database utilizzato da Kong Gateway
->docker run -d --name kong-database --network=kong-net -p 5432:5432 -e “POSTGRES_USER=kong” -e “POSTGRES_DB=kong” -e "POSTGRES_PASSWORD=kong" postgres:9.6
+
+.. code-block:: console
+docker run -d --name kong-database --network=kong-net -p 5432:5432 -e “POSTGRES_USER=kong” -e “POSTGRES_DB=kong” -e "POSTGRES_PASSWORD=kong" postgres:9.6
 
 **STEP 3** - Configurare il database "**kong-database**" sul container definito allo STEP 2
->docker run --rm --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" kong:latest kong migrations bootstrap
+
+.. code-block:: console
+
+docker run --rm --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" kong:latest kong migrations bootstrap
 
 **STEP 4** - Predisporre un container in cui deployare l' ultima istanza di Kong Gateway
->docker run -d --name kong --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" -e "KONG_PROXY_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl" -p 8000:8000 -p 8443:8443 -p 127.0.0.1:8001:8001 -p 127.0.0.1:8444:8444 kong:latest
 
->curl -i http://localhost:8001/
+.. code-block:: console
+docker run -d --name kong --network=kong-net -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=kong-database" -e "KONG_PG_USER=kong" -e "KONG_PG_PASSWORD=kong" -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" -e "KONG_PROXY_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" -e "KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl" -p 8000:8000 -p 8443:8443 -p 127.0.0.1:8001:8001 -p 127.0.0.1:8444:8444 kong:latest
 
->curl -i http://localhost:8000/
+.. code-block:: console
+curl -i http://localhost:8001/
+
+.. code-block:: console
+curl -i http://localhost:8000/
 
 ## Installing Konga
->docker run -d -p 1337:1337 --network=kong-net --name konga -v <path-to-kongdata>/kongadata:/app/kongadata -e "NODE_ENV=production" pantsel/konga
+.. code-block:: console
+docker run -d -p 1337:1337 --network=kong-net --name konga -v <path-to-kongdata>/kongadata:/app/kongadata -e "NODE_ENV=production" pantsel/konga
 
->docker run --rm --network=kong-net pantsel/konga -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
+.. code-block:: console
+docker run --rm --network=kong-net pantsel/konga -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
 
->docker run --rm --network=kong-net pantsel/konga:latest -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
+.. code-block:: console
+docker run --rm --network=kong-net pantsel/konga:latest -c prepare -a postgres -u postgresql://kong:kong@kong-database:5432/konga_db
 
->docker run -p 1337:1337 --network=kong-net -e "DB_ADAPTER=postgres" -e "DB_HOST=kong-database" -e "DB_USER=kong" -e "DB_DATABASE=konga_db" -e "KONGA_HOOK_TIMEOUT=120000" -e "NODE_ENV=production" --name konga pantsel/konga
+.. code-block:: console
+docker run -p 1337:1337 --network=kong-net -e "DB_ADAPTER=postgres" -e "DB_HOST=kong-database" -e "DB_USER=kong" -e "DB_DATABASE=konga_db" -e "KONGA_HOOK_TIMEOUT=120000" -e "NODE_ENV=production" --name konga pantsel/konga
 
 **Importante**: Sostituire a <**path-to-kongdata**> (presente nel primo comando del blocco di cui sopra) un path del server/macchina host in cui storare i kongdata.
 
