@@ -1,4 +1,4 @@
-API
+Sporteca API
 ===
 
 .. autosummary::

@@ -1,34 +1,30 @@
 Usage
 =====
 
-.. _installation:
+.. _sporteca-auth:
 
-Installation
-------------
+Sporteca Auth
+-------------
 
-To use Lumache, first install it using pip:
+Sporteca Auth API provides authentication and authorization services for accessing Sporteca's platform. With this API, users can securely access Sporteca's services and resources using their credentials.
 
-.. code-block:: console
-
-   (.venv) $ pip install lumache
-
-Creating recipes
+Sporteca Profile
 ----------------
 
-To retrieve a list of random ingredients,
-you can use the ``lumache.get_random_ingredients()`` function:
+Sporteca Profile API enables users to manage their profiles on the Sporteca platform. With this API, users can view and update their personal information, manage their sports preferences, and connect with other athletes and clubs on the platform.
 
-.. autofunction:: lumache.get_random_ingredients
+Sporteca Country
+----------------
 
-The ``kind`` parameter should be either ``"meat"``, ``"fish"``,
-or ``"veggies"``. Otherwise, :py:func:`lumache.get_random_ingredients`
-will raise an exception.
+Sporteca Country API provides access to information about countries, including a list of all the municipalities in the country. With this API, users can retrieve information about municipalities in the country and use this information to build location-based features for their applications.
 
-.. autoexception:: lumache.InvalidKindError
+Sporteca Skills
+---------------
 
-For example:
+Sporteca Skills API provides access to a comprehensive list of all possible sports skills that an athlete can possess. With this API, users can retrieve information about different sports skills, including their descriptions and related attributes. This information can be used to build features that help athletes track their progress and improve their skills.
 
->>> import lumache
->>> lumache.get_random_ingredients()
-['shells', 'gorgonzola', 'parsley']
+Sporteca Roles
+--------------
+
+Sporteca Roles API allows users to manage roles on the Sporteca platform. With this API, users can retrieve information about roles available on the platform and manage their own roles. This includes assigning roles to other users, revoking roles, and creating new roles. The API provides an easy way to manage access and permissions for different types of users on the platform.
 
