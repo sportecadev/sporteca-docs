@@ -17,3 +17,5 @@ Contents
 
    kong-api-gateway/installl-kong-api-gateway
    sporteca-api/sporteca-api
+   sporteca-administration/sporteca-administration
+   sporteca-app/sporteca-app
