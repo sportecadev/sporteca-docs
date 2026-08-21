@@ -28,7 +28,8 @@ docs/01-architecture/
 ├── 03-backend/
 │   └── 03-jmix-backend.md              # sporteca-backend Jmix/Spring, JWT, Microsoft Entra SSO, provisioning
 ├── 04-database-and-storage/
-│   └── 04-database-and-media.md        # Segregazione tenant, schema MySQL e Google Cloud Storage
+│   ├── 04-database-and-media.md        # Segregazione tenant, schema MySQL e Google Cloud Storage
+│   └── 04-database-schema-and-scraper-alignment.md # Allineamento schema DB, scraper e flusso di Claiming dei profili
 └── 07-integrations/
     └── 07-payments-billing-comms.md   # Stripe/PayPal, FattureInCloud, SendGrid/Postmark
 ```
