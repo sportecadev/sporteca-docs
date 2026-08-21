@@ -1,130 +1,98 @@
-# UC-07 - Validazione back-office del profilo
+# UC-07 - Validazione Automatica AI-Driven e Coda di Back-Office
 
-Stato: confermato (con assunzioni aperte segnalate in fondo al documento)
-Ultimo aggiornamento: 2026-08-05
-Documenti correlati: uc-02_login-utente.md, uc-04_profilazione-societa.md,
-uc-05_profilazione-atleta.md, uc-06_profilazione-staff.md
+Stato: confermato
+Ultimo aggiornamento: 2026-08-21
+Documenti correlati: uc-02_login-utente.md, uc-04_profilazione-societa.md, uc-05_profilazione-atleta.md, 04-database-schema-and-scraper-alignment.md
 
 ## Obiettivo
 
-Permettere a un operatore back-office di esaminare i profili utente (Società, Atleta, Membro
-staff) che hanno completato la profilazione, approvandoli o rifiutandoli, in modo che solo i
-profili conformi diventino visibili e ricercabili sulla piattaforma.
+Permettere la verifica e l'approvazione rapida dei profili utente (Società, Atleta, Staff) che hanno completato la profilazione. Il processo combina una **Pipeline di Validazione Automatica gestita da Intelligenza Artificiale (AI-Driven OCR & Matching)** con una coda di revisione manuale per gli operatori umani in caso di anomalie, ottimizzando i tempi di approvazione e riducendo al minimo lo sforzo operativo.
+
+---
+
+## 🤖 1. Il Flusso della Pipeline Automatica AI-Driven
+
+Ogni volta che un utente completa la profilazione, lo stato del profilo passa a `PENDING_REVIEW` (In attesa di revisione). Invece di attendere l'intervento manuale immediato di un operatore, il backend di Sporteca attiva istantaneamente un **servizio asincrono di validazione automatica (AI Validation Pipeline)**:
+
+```
+[ Profilo in PENDING_REVIEW ]
+             │
+             ▼
+[ Download Documenti da GCS ]
+             │
+             ▼
+[ AI Document Parser (OCR) ] ───► Estrazione: Nome, Cognome, Codice Fiscale,
+             │                             Data Scadenza Documento
+             ▼
+[ Validation & Matching Engine ]
+  * Calcolo Checksum Codice Fiscale
+  * Corrispondenza Dati Anagrafici Utente / Dati Documento AI
+  * Validazione Scadenza Certificato CONI (per Società)
+             │
+    ┌────────┴────────┐
+    ▼ (Match >= 95%)   ▼ (Match < 95% o Errore)
+[ AUTO-APPROVATO ]   [ FLAGGATO MANUALE ]
+    │                  │
+    ├──────────────────┤
+    ▼                  ▼
+[ ACTIVE_VALIDATED ] [ ACTIVE_UNVALIDATED ] (Notifica Operatore)
+```
+
+---
 
 ## Attori
 
-- Operatore back-office
-- Sistema (piattaforma Sporteca)
-- Utente (destinatario indiretto: riceve l'esito della validazione)
-
-## Precondizioni
-
-- Esiste almeno un profilo (Società, Atleta o Staff) nello stato "profilazione completata, in
-  attesa di validazione back-office" (raggiunto tramite UC-04, UC-05 o UC-06)
-
-## Trigger
-
-Un profilo entra nella coda di validazione al completamento della profilazione, oppure vi rientra
-dopo che l'utente ha corretto e reinviato un profilo precedentemente rifiutato.
+- Sistema (Pipeline AI-Driven del backend Sporteca)
+- Operatore back-office (per le verifiche manuali dei casi con basso score di confidenza)
+- Utente (destinatario indiretto: riceve notifica istantanea sull'esito)
 
 ---
 
-## Flusso principale
+## Flusso Principale: Pipeline AI & Coda di Lavoro
 
-1. L'operatore back-office accede alla coda dei profili in attesa di validazione
-2. L'operatore seleziona un profilo ed esamina in un unico passaggio sia i dati anagrafici sia i
-   documenti caricati dall'utente
-3. L'operatore verifica la coerenza tra i dati anagrafici inseriti e i documenti caricati (es.
-   corrispondenza nome/cognome con il documento di identità), e la validità/leggibilità dei
-   documenti stessi
-4. L'operatore registra l'esito della validazione: Approvato oppure Rifiutato
-5. Se **Approvato**: il sistema aggiorna lo stato del profilo a "validato"; il profilo diventa
-   ricercabile nel motore di ricerca (subordinatamente al flag di visibilità impostato
-   dall'utente in fase di profilazione) e l'account ottiene accesso completo alle funzionalità
-   della piattaforma (vedi UC-02)
-6. Se **Rifiutato**: l'operatore è tenuto a inserire una motivazione obbligatoria; il sistema
-   notifica l'utente (email) comunicando il rifiuto e la motivazione indicata; il profilo resta
-   (o ritorna) nello stato "in attesa di validazione" dal punto di vista dell'accesso (vedi nota
-   di raccordo con UC-02 sotto)
+### Fase 1: Elaborazione Automatica AI
+1. Un event listener intercetta il passaggio di un profilo allo stato `PENDING_REVIEW`.
+2. Il sistema scarica in modo sicuro i documenti d'identità (front/back) e i certificati (CONI) dal bucket di Cloud Storage.
+3. Il modulo **AI Document Parser (OCR)** analizza i documenti:
+    *   Estrae i testi e i campi chiave: *Nome, Cognome, Codice Fiscale, Data di Nascita, Numero Documento, Data di Scadenza*.
+    *   Effettua un controllo visivo del tipo di documento (Carta d'Identità, Patente, Passaporto).
+4. Il **Matching Engine** esegue i controlli incrociati di coerenza:
+    *   *Controllo CF*: Calcola matematicamente il checksum del Codice Fiscale inserito dall'utente e verifica che coincida con quello estratto dal documento.
+    *   *Controllo Coerenza*: Confronta lettera per lettera Nome, Cognome e Data di Nascita inseriti nel profilo con i dati estratti dal documento via OCR.
+    *   *Controllo Scadenza CONI*: Per le Società, analizza il documento di affiliazione per estrarre e convalidare la data di fine validità.
+5. Il sistema calcola un **Confidence Score (Punteggio di Confidenza)** da 0.0 a 1.0 basato sulla chiarezza del testo e la corrispondenza dei dati.
 
 ---
 
-## Nota di raccordo con UC-02 - stati "in attesa di validazione" vs "sospeso"
+### Fase 2: Gestione dei Verdicts (Esiti AI)
 
-Questo documento introduce una precisazione rispetto a UC-02, necessaria per evitare
-un'incoerenza: un rifiuto in fase di prima validazione (caso ordinario, correggibile dall'utente)
-non deve comportare lo stato "sospeso" definito in UC-02 (che nega il login e richiede
-assistenza). Un rifiuto in questa fase riporta semplicemente il profilo allo stato "in attesa di
-validazione": l'utente mantiene l'accesso (limitato) e può correggere/reinviare autonomamente,
-senza limite di tentativi.
+#### Scenario A: High Confidence Match (Score >= 0.95 - Auto-Approvato)
+1. Tutti i controlli anagrafici e i Codici Fiscali coincidono perfettamente, i documenti sono nitidi ed in corso di validità.
+2. Il sistema imposta automaticamente lo stato del profilo a `APPROVED` ed attiva l'utente impostandolo a `ACTIVE_VALIDATED` (pubblicandolo nel motore di ricerca).
+3. Registra nel database Jmix un record di auditing (`ValidationRecord`):
+    *   `verified_by`: "AI_PIPELINE"
+    *   `confidence_score`: 0.98
+    *   `notes`: *"Validazione automatica completata con successo tramite AI. Tutti i dati anagrafici e fiscali corrispondono."*
+4. Invia un'email automatica all'utente confermando che il suo profilo è ora attivo e validato.
 
-Lo stato "sospeso" resta riservato a un intervento del back-office **successivo** a una
-validazione già positiva (es. viene rilevata successivamente una non conformità grave, o dati
-palesemente falsi) e non è coperto nel dettaglio da questo documento: il caso d'uso specifico
-per la sospensione post-validazione è da definire separatamente (vedi assunzioni aperte).
-
----
-
-## Flussi alternativi
-
-**A1 - Riesame dopo correzione**
-Quando un profilo rifiutato viene corretto e reinviato dall'utente, rientra nella coda di
-validazione e segue lo stesso flusso principale, senza distinzioni rispetto a un primo esame.
+#### Scenario B: Low Confidence / Mismatch (Score < 0.95 - Revisione Manuale)
+1. Uno o più campi non coincidono (es. il Codice Fiscale inserito differisce da quello sul documento, o il certificato CONI è scaduto) oppure il documento è sfocato/illeggibile.
+2. Il sistema **non rifiuta l'utente direttamente**, ma lo marca come `FLAGGED_FOR_MANUAL_REVIEW` e lo inserisce nella coda di lavoro degli operatori umani di back-office.
+3. Il sistema evidenzia graficamente nel pannello Jmix Cockpit i motivi del flag AI (es. *"Mismatch rilevato sul Codice Fiscale: inserito X, estratto dal documento Y"* o *"Impossibile leggere il documento - immagine sfocata"*).
+4. L'operatore back-office umano esamina manualmente il caso (vedi Flusso Manuale).
 
 ---
 
-## Eccezioni
-
-**E1 - Documento illeggibile, scaduto o mancante**
-Trattato come rifiuto standard: l'operatore indica la motivazione corrispondente.
-
-**E2 - Dati anagrafici incoerenti con i documenti caricati**
-Trattato come rifiuto standard: l'operatore indica la motivazione corrispondente.
-
----
-
-## Postcondizioni
-
-- Se approvato: profilo in stato "validato", account con accesso completo, profilo ricercabile
-  se il flag di visibilità è attivo
-- Se rifiutato: profilo in stato "in attesa di validazione", utente notificato con la motivazione,
-  account con funzionalità limitate fino a nuova validazione positiva
-
-## Regole di business coinvolte
-
-- Un profilo rifiutato può essere corretto e reinviato dall'utente senza limite di tentativi
-- Ogni rifiuto richiede una motivazione obbligatoria, sempre comunicata all'utente
-- Un profilo non diventa visibile nel motore di ricerca né può iniziare a sbloccare altri profili
-  finché non risulta validato positivamente
-- La validazione avviene in un unico passaggio (anagrafica e documenti esaminati insieme), non a
-  step separati
-
-## Dati utilizzati
-
-Dati anagrafici e sportivi del profilo (ereditati da UC-04/05/06), documenti caricati, esito
-della validazione, motivazione del rifiuto (se applicabile), identificativo dell'operatore che ha
-esaminato il profilo, data e ora dell'esame.
-
-## Entità coinvolte
-
-- User
-- CompanyProfile / AthleteProfile / StaffProfile (a seconda della tipologia)
-- Media (documenti esaminati)
-- ValidationRecord (nuova entità: rappresenta un singolo esame di validazione, con esito,
-  motivazione, operatore e data; consente di mantenere uno storico se un profilo viene esaminato
-  più volte a seguito di rifiuti e correzioni)
+### Fase 3: Revisione Manuale dell'Operatore (Jmix Cockpit)
+1. L'operatore accede alla coda Jmix dei profili contrassegnati per la revisione manuale.
+2. Apre il profilo ed esamina i dettagli anagrafici affiancati al documento originale ed alle note d'errore evidenziate dall'AI.
+3. Registra il verdetto definitivo:
+    *   **Approvato**: Sovrascrive il flag AI. Il profilo passa a `ACTIVE_VALIDATED`.
+    *   **Rifiutato**: L'operatore seleziona la motivazione corretta (es. *"Documento scaduto"*) ed inserisce la motivazione esplicita per l'utente. Il profilo torna a `ACTIVE_UNVALIDATED` e l'utente riceve un'email automatica contenente le istruzioni esatte su come correggere i dati per riavviare la pipeline.
 
 ---
 
-## Assunzioni ancora da validare (non decise, segnalate esplicitamente)
+## Regole di business
 
-- Se serve mantenere uno storico completo di tutte le validazioni effettuate su un profilo (audit
-  trail) o sia sufficiente conservare solo l'esito più recente
-- Se esiste un tempo massimo (SLA) entro cui il back-office deve esaminare un profilo in coda
-- Se un operatore può assegnarsi/prenotare un profilo dalla coda per evitare che più operatori
-  lo esaminino contemporaneamente, o se la coda è a libero accesso
-- Se esistono ruoli/permessi differenziati tra operatori back-office (es. operatore junior vs
-  supervisore con potere di sospensione)
-- Il caso d'uso dedicato alla sospensione di un profilo già validato (distinto dal rifiuto in
-  prima validazione, vedi nota di raccordo sopra) non è coperto da questo documento e resta da
-  definire
+*   **Raccordo con UC-02**: Il rifiuto (automatico o manuale) in fase di prima validazione non deve mai innescare lo stato `SUSPENDED` (che blocca il login), ma riporta semplicemente il profilo a `ACTIVE_UNVALIDATED`. L'utente può accedere per modificare e reinviare i dati senza limiti di tentativi.
+*   **Historizzazione (Audit Trail)**: Ogni singolo esame effettuato (sia dalla pipeline AI, sia dall'operatore umano) crea un record immutabile nella tabella `validation_records`, conservando l'esito storico delle modifiche per motivi di sicurezza e conformità GDPR.

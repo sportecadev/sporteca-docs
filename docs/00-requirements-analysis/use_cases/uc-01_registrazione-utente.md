@@ -6,23 +6,25 @@ Documento correlato: 01-decisioni-perimetro-mvp.md
 
 ## Obiettivo
 
-Permettere a un visitatore non autenticato di creare un account sulla piattaforma Sporteca. Il flusso divide gli utenti per tipologia per garantire che le Società Sportive utilizzino canali istituzionali formali, mentre Atleti, Membri dello Staff e Genitori godano di accessi moderni e rapidi (Social Logins). Applica fin dal primo accesso la conformità sul trattamento dati dei minori (GDPR).
+Permettere a un visitatore non autenticato di creare un account sulla piattaforma Sporteca. Il flusso divide gli utenti per tipologia di profilo dichiarato (Atleta, Membro dello Staff, Società Sportiva), la quale costituisce la sorgente di verità del sistema, senza imporre vincoli rigidi o escludere email consumer (es. `@gmail.com`), salvaguardando così l'iscrizione delle piccole associazioni dilettantistiche locali. Applica fin dal primo accesso la conformità sul trattamento dati dei minori (GDPR) e traccia l'origine della creazione dell'account.
 
 ---
 
-## 👥 Canali d'Accesso Separati per Ruolo
+## 👥 Canali d'Accesso per Ruolo
 
-Per garantire la massima coerenza e sicurezza nel matching, Sporteca adotta canali di registrazione differenziati:
+Sporteca adotta canali di registrazione differenziati basati esclusivamente sulla **Tipologia di Profilo** selezionata dall'utente in fase di registrazione, e non sul dominio dell'email aziendale:
 
-| Ruolo Profilo | Canale Registrazione Social (Google/Apple) | Canale Registrazione Classico (Email + Password) | Canale Registrazione Enterprise SSO (Microsoft Entra) |
+| Ruolo Profilo | Canale Registrazione Social (Google/Apple Personale) | Canale Registrazione Classico (Email + Password) | Canale Registrazione Enterprise / Professional SSO |
 | --- | :---: | :---: | :---: |
-| **Atleta / Genitore** | **Sì (Fortemente consigliato)** | Sì | No |
-| **Membro dello Staff** | **Sì (Fortemente consigliato)** | Sì | No |
-| **Società Sportiva (Company)**| **NO (Disabilitato)** | **Sì (Istituzionale)** | **Sì (Enterprise Integration)** |
+| **Atleta / Genitore** | **Sì (Google/Apple)** | Sì | No |
+| **Membro dello Staff** | **Sì (Google/Apple)** | Sì | No |
+| **Società Sportiva (Company)**| **NO (Disabilitato per account personali)** | **Sì (Istituzionale/Standard)** | **Sì (SSO Professionale se configurato)** |
 
-### Razionale di business:
-*   **Società Sportive (Company)**: Gestiscono dati contrattuali, sblocchi economici, Partita IVA e informazioni sensibili. Devono registrarsi esclusivamente con la loro email istituzionale (es. `segreteria@acmilan.it`) o tramite SSO aziendale. Questo previene il rischio che un profilo societario venga legato permanentemente al profilo Google o Apple personale di un singolo dipendente o collaboratore.
-*   **Atleti, Staff e Genitori**: L'esperienza utente deve essere ultra-rapida. I Social Provider (Google, Apple OAuth2) garantiscono l'immediata verifica dell'email, riducendo l'attrito del caricamento e migliorando il tasso di conversione.
+### Razionale di business e Inclusività Locale:
+*   **Società Sportive (Company)**: Gestiscono dati contrattuali, sblocchi economici, Partita IVA e informazioni sensibili. 
+    *   *Nessun blocco domini*: Moltissime piccole associazioni sportive dilettantistiche italiane (A.S.D.) non possiedono un dominio email proprio a causa di limiti di budget, e utilizzano comunemente email consumer (es. `asd.paesello@gmail.com`). **Il sistema consente la registrazione di qualsiasi dominio email per le Società.**
+    *   *Canale Social Disabilitato*: Per registrarsi, la Società non può cliccare direttamente sui pulsanti social personali (Google/Apple) nello step di registrazione pubblica, così da prevenire che la proprietà dell'account aziendale venga associata permanentemente al profilo Google personale di un singolo collaboratore provvisorio. Le Società accedono con credenziali classiche o federando l'infrastruttura aziendale se presente.
+*   **Atleti, Staff e Genitori**: L'esperienza utente deve essere ultra-rapida. I Social Provider (Google, Apple OAuth2 personali) garantiscono l'immediata verifica dell'email, riducendo l'attrito e migliorando il tasso di conversione.
 
 ---
 
@@ -30,8 +32,8 @@ Per garantire la massima coerenza e sicurezza nel matching, Sporteca adotta cana
 
 - Utente non autenticato (visitatore che si registra)
 - Genitore/tutore (solo per utenti under 14, come attore di conferma esterno)
-- Provider di identità esterno: Google, Apple (solo per Atleta, Staff, Genitore)
-- Provider Enterprise SSO: Microsoft Entra ID (solo per Società Sportive)
+- Provider di identità esterno: Google, Apple (solo per Atleta, Staff, Genitore - account personali)
+- Provider Professional/Enterprise SSO (opzionale per Società con tenant dedicati)
 - Sistema (piattaforma Sporteca)
 
 ## Precondizioni
@@ -56,14 +58,18 @@ L'utente accede alla pagina di registrazione e seleziona il proprio ruolo specif
     *   **Under 14**: Richiede l'email obbligatoria del genitore/tutore e invia il link di consenso (doppia conferma).
     *   **14-17 anni**: Registrazione autonoma, l'account si attiva con conferma email standard; i dati/documento del genitore verranno richiesti in fase di profilazione (UC-05).
     *   **18+ (Adulto)**: Registrazione e attivazione autonoma standard.
-5. Il sistema invia un'email di attivazione con un token sicuro a scadenza (24 ore).
-6. Al click sul link, l'account passa a `ACTIVE_UNVALIDATED` e l'utente viene indirizzato allo step di profilazione (UC-04/05/06).
+5. Il sistema crea l'account impostando i campi di tracciamento di sicurezza:
+    *   **`creation_provider`** = `LOCAL` (Indica l'origine della creazione dell'account).
+    *   **`primary_provider`** = `LOCAL` (Indica il metodo di accesso attualmente attivo).
+6. Il sistema registra un evento nel **Registro Storico di Audit delle Identità (Identity Audit Log)** dell'account (dettagliato in UC-09).
+7. Il sistema invia un'email di attivazione con un token sicuro a scadenza (24 ore).
+8. Al click sul link, l'account passa a `ACTIVE_UNVALIDATED` e l'utente viene indirizzato allo step di profilazione (UC-04/05/06).
 
 ---
 
 ## Flusso principale B - Registrazione via Provider Social (Solo Atleta, Staff, Genitore)
 
-1. L'utente seleziona un provider abilitato: **Google** o **Apple**.
+1. L'utente seleziona un provider abilitato: **Google** o **Apple** (account personali).
 2. Il sistema avvia la sequenza OAuth2/OIDC verso il provider.
 3. L'utente si autentica e autorizza la condivisione dell'email (già verificata a monte dal provider).
 4. Il sistema riceve l'email e l'identificativo unico del provider (Subject / User ID).
@@ -71,41 +77,28 @@ L'utente accede alla pagina di registrazione e seleziona il proprio ruolo specif
     *   **Se l'email esiste già**: Applica il flusso alternativo **A1 (Accorpamento automatico / Merge)** e reindirizza al login.
     *   **Se l'email è nuova**: Prosegue con la creazione dell'account.
 6. Il sistema richiede obbligatoriamente all'utente la data di nascita (non condivisa dai provider social) per determinare la fascia d'età.
-7. Il sistema applica la logica minori in base alla fascia d'età:
-    *   **14+ / Adulto**: L'account viene impostato direttamente in stato `ACTIVE_UNVALIDATED` senza ulteriori email di conferma (l'email è già verificata dal social provider).
-    *   **Under 14**: Richiede l'email del genitore/tutore per avviare il flusso di doppia conferma. L'account rimane disattivato fino al consenso del genitore.
-8. Nessuna password locale viene registrata per gli utenti creati via Social.
-
----
-
-## Flusso principale C - Registrazione via Enterprise SSO / Microsoft Entra (Solo Società)
-
-1. L'utente (Società Sportiva) seleziona "Registrati tramite Account Aziendale (Microsoft Entra)".
-2. Il sistema avvia la federazione SAML 2.0 / OpenID Connect verso il tenant Microsoft configurato per la Società (o il tenant multitenant di Sporteca Enterprise).
-3. L'utente effettua il login aziendale e autorizza lo scambio delle credenziali.
-4. Il sistema riceve il JWT Token firmato da Microsoft, estrae le informazioni della Società:
-    *   Email istituzionale.
-    *   Ragione sociale della società.
-    *   Username univoco basato sulla mail istituzionale.
-5. Il sistema effettua il provisioning automatico dell'account (in linea con il pattern `UserProvisioningService` descritto nell'architettura). L'account viene impostato in stato `ACTIVE_UNVALIDATED` poiché l'email è già certificata dall'infrastruttura Enterprise.
-6. L'utente viene reindirizzato alla compilazione dei dati societari integrativi (Partita IVA e Certificato CONI - UC-04).
+7. Il sistema crea l'account impostando:
+    *   **`creation_provider`** = `GOOGLE` o `APPLE` (a seconda del provider scelto).
+    *   **`primary_provider`** = `GOOGLE` o `APPLE` (il provider comanda l'autenticazione).
+    *   **Password locale**: Disabilitata/mascherata (`password_hash` nullo).
+8. Il sistema registra l'evento di creazione nel **Registro Storico di Audit delle Identità**.
+9. Il sistema applica la logica minori in base alla fascia d'età ed indirizza alla profilazione.
 
 ---
 
 ## Flussi alternativi e Accorpamenti
 
 ### A1 - Accorpamento automatico (Merge) delle identità
-Se un utente tenta la registrazione social o enterprise con una mail già registrata tramite credenziali classiche (o un altro provider):
+Se un utente tenta la registrazione social o enterprise con una mail già registrata tramite credenziali classiche:
 1. Il sistema verifica che l'email coincida.
-2. Collega automaticamente il nuovo provider social o aziendale come **metodo di accesso aggiuntivo (AuthMethod)** all'account esistente.
-3. Non viene duplicato alcun record nel database.
-4. L'utente mantiene tutte le proprie anagrafiche e profili intatti e da quel momento può effettuare il login con entrambi i canali.
+2. Collega automaticamente il nuovo provider social come **metodo di accesso aggiuntivo (AuthMethod)** all'account esistente.
+3. **Aggiornamento Sicurezza**: Se l'utente decide di rendere il provider social come canale primario, la password locale viene sbiacata/disabilitata e comanda il provider esterno.
+4. Non viene duplicato alcun record nel database.
+5. Il sistema registra la variazione nel **Registro Storico di Audit delle Identità**, specificando l'avvenuto collegamento.
 
 ---
 
 ## Regole di business e Conformità Minori (GDPR)
 
-*   **Under 14 - Doppia Conferma**: L'attivazione richiede obbligatoriamente il click del minore sul link di attivazione E il consenso esplicito del genitore/tutore (fornito cliccando sul link inviato alla sua email). Fino ad allora lo stato è `PENDING_PARENT_CONSENT`.
-*   **Univocità dell'Email**: Ad ogni indirizzo email corrisponde una sola entità `Account` logica, indipendentemente dai provider di accesso collegati.
-*   **Sicurezza dei Social Account**: Nessuna password locale viene creata per gli utenti registrati esclusivamente con provider esterni. Se tentano un ripristino password classico, il sistema devia l'utente spiegando che l'accesso è veicolato via Social.
-*   **Restrizione Società**: Qualsiasi tentativo di associare un account Società con un provider social personale (Google/Apple) viene bloccato dall'interfaccia e dalle API di validazione del backend.
+*   **Under 14 - Doppia Conferma**: L'attivazione richiede obbligatoriamente il click del minore sul link di attivazione E il consenso esplicito del genitore/tutore. Fino ad allora lo stato è `PENDING_PARENT_CONSENT`.
+*   **Tracciabilità e Audit**: Qualsiasi transizione o aggiunta di metodi di accesso deve essere immutabilmente registrata a fini di ripristino dell'accesso da parte degli operatori del back-office in caso di problemi di login.
