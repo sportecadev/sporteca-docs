@@ -4,9 +4,9 @@ Benvenuto nel portale ufficiale della documentazione di **Sporteca**. Questo spa
 
 ---
 
-## 📂 1. Mappa Globale del Repository Sporteca
+## 📂 1. Mappa Globale del Repository Sporteca (Consolidata)
 
-Il progetto è strutturato come un monorepo modulare, dove ciascuna cartella ha responsabilità ben definite e isolate. Di seguito viene illustrato il ruolo di ciascuna cartella principale:
+Il progetto è strutturato come un monorepo modulare con responsabilità ben isolate. A seguito del consolidamento dei sistemi, il backend centralizza tutte le funzionalità in un'unica base dati, e il frontend di test dello scraper è stato separato:
 
 ```text
 / (Progetto Radice)
@@ -14,50 +14,51 @@ Il progetto è strutturato come un monorepo modulare, dove ciascuna cartella ha 
 │   ├── workflow/             # Linee guida e standard per lo sviluppo (DoD, Git pipeline)
 │   ├── tasks/                # Cartelle dei task (todo, doing, done) per tracciare lo stato di avanzamento
 │   └── skills/               # Istruzioni e competenze speciali per l'AI
-├── sporteca-api/             # Backend centrale (Spring Boot + Jmix) - approccio Monolite Modulare
-│   ├── sporteca-auth-api/     # Modulo per autenticazione JWT, registrazione e privacy dei minori (GDPR)
-│   ├── sporteca-countries-api/# Modulo per la gestione geografica e località
-│   ├── sporteca-profiles-api/ # Modulo per la profilazione (Atleti, Società, Staff) e validazione dei profili
-│   └── sporteca-skills-api/   # Modulo per la gestione dinamica multi-sport (sport, ruoli, abilità)
-├── sporteca-app/             # Frontend web client reattivo (React 18 + TypeScript + TailwindCSS v3)
-│   ├── src/                  # Codice sorgente della Dashboard e dei componenti grafici
-│   └── public/db/            # Collegamento simbolico (symlink) ai file JSON generati dallo scraper
-├── sporteca-database/        # Script SQL di definizione dello schema database e popolamento iniziale
+├── sporteca-backend/         # NUOVO BACKEND UNIFICATO (Spring Boot 3.x + Jmix 2.x)
+│   ├── src/main/java/        # Codice sorgente Java consolidato (Jmix Cockpit + REST APIs)
+│   ├── src/main/resources/   # File di configurazione, mappe geografiche e risorse di i18n
+│   └── CONCETTI_MODELLO_DATI.md # Blueprint con il design del DB derivato dalla convergenza di sporteca-api
+├── sporteca-scaper-app/      # EX sporteca-app: Client web React + TypeScript (DaisyUI / Tailwind v3)
+│   ├── src/                  # Dashboard prototipo per testare la visualizzazione dati
+│   └── public/db/            # Collegamento simbolico (symlink) ai file JSON locali prodotti dallo scraper
+├── sporteca-database/        # Script SQL storici di definizione dello schema database e popolamento
 ├── sporteca-scraper/         # Scraper in Python 3.14 per estrarre i dati dei campionati da Tuttocampo.it
 │   ├── scripts/              # Script di esecuzione (`run_scraper.py` e `db_manager.py`)
 │   │   └── sports/           # Moduli specifici per sport (calcio, basket, volley, rugby)
 │   └── db/                   # Database locale basato su file JSON normalizzati
-└── sporteca-docs/            # QUESTA CARTELLA: Portale documentale e analisi strategica
-    ├── docs/                 # Documenti di analisi e architettura
-    └── README.md             # Questo indice di benvenuto
+├── sporteca-docs/            # QUESTA CARTELLA: Portale documentale e analisi strategica
+│   ├── docs/                 # Documenti di analisi e architettura
+│   └── README.md             # Questo indice di benvenuto
+└── sporteca-api/             # DEPRECATO (Rimosso / Confluito in sporteca-backend)
 ```
 
 ---
 
 ## 📑 2. Struttura dei Documenti in `sporteca-docs`
 
-La cartella `sporteca-docs/docs/` è il cuore pulsante dell'analisi strategica del progetto ed è divisa in due macro-aree:
+La cartella `sporteca-docs/docs/` definisce le specifiche di business e architetturali di Sporteca:
 
 ### 🎯 A. `00-requirements-analysis/` (Perimetro di Business)
 Questa cartella definisce **cosa** fa l'applicazione, le logiche di business, la conformità legale e la strategia commerciale.
 *   **`01_decisioni_perimetro_mvp.md`**: Le linee di confine approvate per la prima release (funzionalità incluse ed escluse come Stonk, badge o chat).
 *   **`business_model/`**: Contiene la strategia di business e go-to-market.
-    *   `bm-go-to-market.md`: Analisi dettagliata dei concorrenti (debolezze di *Profilo Sportivo*), posizionamento competitivo basato sulla serietà del matching e sulla conformità GDPR dei minori, e strategie di monetizzazione.
-*   **`use_cases/`**: I flussi d'uso dettagliati (UC-01 a UC-08) che descrivono i comportamenti del sistema:
-    *   `uc-01`: Registrazione utente e gestione minorenni (fasce Under 14, 14-17, 18+).
-    *   `uc-02`: Login utente e ciclo di vita degli stati dell'account.
-    *   `uc-03`: Recupero password.
-    *   `uc-04`: Profilazione utente Società (Partita IVA, CONI, ecc.).
-    *   `uc-05`: Profilazione utente Atleta (Codice Fiscale, scheda sportiva, genitori).
-    *   `uc-06`: Profilazione utente Staff (Allenatore, Preparatore, ecc.).
-    *   `uc-07`: Validazione dei profili da parte del Back-Office.
-    *   `uc-08`: Motore di ricerca profili anonimizzato per la massima tutela della privacy.
+    *   `bm-go-to-market.md`: Analisi dettagliata dei competitor (come *Profilo Sportivo*), differenziazione sulla sicurezza GDPR dei minori, e strategie di monetizzazione.
+*   **`use_cases/`**: I flussi d'uso dettagliati (UC-01 a UC-09) che descrivono i comportamenti del sistema:
+    *   **`uc-01_registrazione-utente.md`**: Registrazione utente differenziata per ruolo (Social Google/Apple per atleti/staff, credenziali istituzionali o Enterprise SSO Microsoft Entra per Società) e conformità minori.
+    *   **`uc-02_login-utente.md`**: Login differenziato e gestione delle sessioni stateless tramite token JWT e Refresh Token.
+    *   **`uc-03_recupero-password.md`**: Recupero password moderno e sicuro tramite codici temporanei OTP (Email/SMS) o Magic Link temporanei (eliminazione domande di sicurezza).
+    *   `uc-04_profilazione-utente-società.md`: Profilazione societaria (CONI, Partita IVA).
+    *   `uc-05_profilazione-utente-atleta.md`: Profilazione atleta e sezione genitori.
+    *   `uc-06_profilazione-utente-staff.md`: Profilazione staff tecnico e patentini.
+    *   `uc-07_validazione-back-office-profilo.md`: Flusso cumulativo di approvazione/rifiuto anagrafica e documenti.
+    *   `uc-08_motore-ricerca-profili.md`: Ricerca anonima protetta (ruolo ed età) a tutela della privacy.
+    *   **`uc-09_autenticazione-enterprise-entra.md`**: Integrazione Single Sign-On con Microsoft Entra ID per Società e sincronizzazione dinamica degli utenti (`UserProvisioningService`).
 
 ### ⚙️ B. `01-architecture/` (Perimetro Tecnico)
 Questa cartella definisce **come** viene costruita l'applicazione e le scelte tecnologiche.
-*   `01-system-overview.md`: Panoramica ad alto livello degli attori del sistema e dei flussi di lavoro (Claiming del profilo, Scouting, ecc.).
+*   `01-system-overview.md`: Panoramica ad alto livello degli attori del sistema, della separazione dei canali di autenticazione e del backend unificato.
 *   `02-frontend-and-mobile.md`: Architettura della Web App React e dei widget da incorporare in siti WordPress.
-*   `03-jmix-backend.md`: Scelte tecniche del backend Spring Boot + Jmix (sicurezza, api, i18n dinamico).
+*   `03-jmix-backend.md`: Scelte tecniche del backend Spring Boot + Jmix unificato (doppio motore stateful/stateless, Resource Server JWT per Microsoft Entra ID/Social, i18n dinamico).
 *   `04-database-and-media.md`: Schema relazionale MySQL e gestione file multimediali su Google Cloud Storage.
 *   `07-payments-billing-comms.md`: Integrazioni esterne per pagamenti (Stripe), fatturazione (FattureInCloud) e notifiche (SendGrid).
 

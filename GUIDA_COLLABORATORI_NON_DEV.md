@@ -16,7 +16,7 @@ Puoi stampare o salvare questa guida in un comodissimo file PDF in due modi rapi
 ## 1. Che cos'è Git e il nostro Repository?
 
 Pensa a **Git** come a un archivio digitale super-sicuro. Invece di scambiarci continui file Word via email o su Slack (con il rischio di generare versioni confuse come `business_model_v2_definitivo_FINALE.docx`), Git conserva tutto in un unico posto chiamato **Repository** (o "Repo").
-Git tiene traccia di ogni singola parola aggiunta o rimossa, permettendoci di sapere chi ha fatto cosa e, se necessario, di tornare indietro nel tempo a una versione precedente senza perdere nulla.
+Git tine traccia di ogni singola parola aggiunta o rimossa, permettendoci di sapere chi ha fatto cosa e, se necessario, di tornare indietro nel tempo a una versione precedente senza perdere nulla.
 
 ---
 
@@ -60,11 +60,11 @@ In particolare, sei invitato a concentrarti e lavorare sulla cartella del modell
 📁 `sporteca-docs/docs/00-requirements-analysis/business_model/`
 📄 Qui troverai il file principale: **`bm-go-to-market.md`** (Strategia di business model e go-to-market).
 
-> ⚠️ **REGOLA D'ORO:** Non aprire, rinominare o modificare nessun file al di fuori della cartella `sporteca-docs/docs/00-requirements-analysis/`. Ignora completamente cartelle come `sporteca-app`, `sporteca-api`, `sporteca-scraper` o `sporteca-database`. Lì risiede il codice di programmazione che fa funzionare l'applicazione.
+> ⚠️ **REGOLA D'ORO:** Non aprire, rinominare o modificare nessun file al di fuori della cartella `sporteca-docs/docs/00-requirements-analysis/`. Ignora completamente cartelle come `sporteca-scaper-app`, `sporteca-backend`, `sporteca-scraper` o `sporteca-database`. Lì risiede il codice di programmazione che fa funzionare l'applicazione.
 
 ---
 
-## ✍️ 5. Come Scrivere e Modificare in formato Markdown (.md)
+## ✍️ 5. Como Scrivere e Modificare in formato Markdown (.md)
 
 Tutti i nostri documenti utilizzano il formato **Markdown**. Non è altro che testo semplice con alcuni simboli speciali per formattare il testo (titoli, grassetti, elenchi).
 

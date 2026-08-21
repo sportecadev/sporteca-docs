@@ -1,96 +1,78 @@
 # 01 - Panoramica di Sistema (System Overview) 🌐
 
-Questo documento descrive ad alto livello l'architettura complessiva di **Sporteca**, identificando gli attori coinvolti nell'MVP, i casi d'uso principali e i flussi di dati che permettono al sistema di scalare da una configurazione locale a un deployment cloud-native.
+Questo documento descrive ad alto livello l'architettura complessiva di **Sporteca**, identificando gli attori coinvolti, i casi d'uso principali, la separazione dei canali di autenticazione e la confluenza dei sistemi nel nuovo repository unificato **`sporteca-backend`**.
 
 ---
 
 ## 👥 Gli Attori del Sistema nell'MVP
 
-Nell'MVP, ridotto alle sue funzioni fondamentali di incontro tra domanda e offerta sportiva, operano i seguenti attori:
-
-1. **Atleta (User):** Calciatore dilettante che si registra per creare il proprio profilo sportivo digitale e rivendicare (claiming) le sue statistiche storiche reali.
-2. **Company (Società Sportiva):** Società/Club che si registra per ricercare talenti e atleti sul mercato, accedendo ai profili completi e verificati.
-3. **Super Amministratore (Admin):** Personale interno Sporteca con visibilità globale di tutti i dati del database, deputato al controllo, alla moderazione e all'assistenza clienti.
-4. **Scraper (Ingegnere di Ingestione Dati):** Un processo automatizzato asincrono (in Python) che estrae i dati ufficiali dei campionati dai portali sportivi (es. Tuttocampo) per popolare la base dati di confronto.
+1.  **Atleta (User):** Calciatore dilettante che si registra tramite canali rapidi (Social Logins: Google, Apple) per creare la propria scheda sportiva digitale e rivendicare (claiming) le sue statistiche reali.
+2.  **Genitore/Tutore (User):** Attore fondamentale per la compliance dei minori under 14, interviene nel flusso di registrazione rilasciando il consenso digitale (GDPR).
+3.  **Membro dello Staff (User):** Allenatori, preparatori e dirigenti tecnici che si registrano per esporre le proprie qualifiche e trovare contratti con le società.
+4.  **Società Sportiva (Company):** Club che si registra tramite credenziali istituzionali formali o **Enterprise Single Sign-On (Microsoft Entra ID)** per effettuare ricerche mirate ed accedere (previo acquisto/sblocco) ai contatti dei talenti.
+5.  **Super Amministratore (Admin):** Personale interno Sporteca che gestisce le configurazioni multi-sport e valida le anagrafiche/documenti inviati tramite l'interfaccia di amministrazione.
+6.  **Scraper (Ingestion Process):** Processo asincrono Python che estrae i dati ufficiali dei campionati da Tuttocampo.it.
+7.  **Scraper Prototype App (`sporteca-scaper-app`):** Il client web di test React (precedentemente denominato `sporteca-app`) che consuma direttamente i dati JSON locali dello scraper per validare i widget grafici e la visualizzazione dati delle classifiche prima della messa in produzione delle API REST finali.
 
 ---
 
-## 🗺️ Architettura di Alto Livello (High-Level Architecture)
+## 🗺️ Architettura Consolidata (Unified Architecture)
 
-Il sistema adotta un approccio **Ibrido Monolite Modulare** per il backend, esponendo interfacce differenziate per i vari canali di consumo:
+Il sistema adotta un approccio **Ibrido Monolite Modulare** centralizzato nel repository **`sporteca-backend`** (Spring Boot + Jmix), mandando in pensione la vecchia struttura frammentata di `sporteca-api`.
 
 ```
 [ Fonti Esterne: Tuttocampo ]
              |
              v (Scraping periodico asincrono)
-     [ Sporteca Scraper ] ─── (API di Importazione / Scraper API) ───+
-                                                                     |
-                                                                     v
-                                                          +────────────────----+
-                                                          |  Jmix Backend Core |
-                                                          | (Spring Boot REST) |
-                                                          +───┬────────────┬───+
-                                                              |            |
-                      +───────────────────────────────────────+            +──────────────────────────+
-                      | (Interfaccia nativa Jmix Web UI)                                              | (REST APIs over JWT)
-                      v                                                                               v
-          +────────────────────────+                                                      +────────────────────────+
-          |   Pannelli Web App     |                                                      |  API Gateway o Direct  |
-          | - Portale Super Admin  |                                                      |   (Routing & Security) |
-          | - Portale Company      |                                                      +───┬────────────────┬───+
-          +────────────────────────+                                                          |                |
-                                                                                              v                v
-                                                                                       [ App Flutter ]  [ Widget Embed ]
-                                                                                       (Atleti Mobile)   (es. Wordpress)
+     [ Sporteca Scraper ] ─── (Genera JSON locali in db/)
+             │
+             +───► Consumati direttamente da ───► [ sporteca-scaper-app ] (React Prototype)
+                                                                 
+                                                                 
+                                                          +─────────────────────────+
+                                                          |    SPORTECA BACKEND     |
+                                                          |  (Spring Boot + Jmix)   |
+                                                          +───┬─────────────────┬───+
+                                                              |                 |
+                    +─────────────────────────────────────────+                 +──────────────────────────+
+                    | (Interfaccia nativa Jmix Flow UI)                                                    | (REST APIs over JWT)
+                    v                                                                                      v
+         +──────────────────────────+                                                          +──────────────────────────+
+         |     Jmix Cockpit Admin   |                                                          |   Spring REST Stateless  |
+         | - Portale Super Admin    |                                                          |   - Auth, Profiles,      |
+         | - Configurazione Sport   |                                                          |     Localities, Skills   |
+         | - Approvazioni Profili   |                                                          +───┬──────────────────┬───+
+         +──────────────────────────+                                                              |                  |
+                                                                                                   v                  v
+                                                                                            [ App Flutter ]    [ Widget Embed ]
+                                                                                            (Atleti/Staff)    (WordPress Club)
 ```
+
+---
+
+## 🔒 Canali di Autenticazione e Sessioni Stateless
+
+L'architettura di autenticazione è concepita per essere solida e scalabile, segregando gli accessi per tipologia di utenza:
+
+*   **Atleti, Staff e Genitori (Canale Mobile/Social)**:
+    *   Effettuano l'accesso in modo rapido tramite **Google o Apple OAuth2 / OIDC**.
+    *   Il backend convalida il token emesso dai social provider e restituisce una coppia di token stateless di Sporteca: **Access Token (JWT)** a breve scadenza e **Refresh Token** memorizzato su database per il rinnovo.
+    *   Nessuna sessione pesante viene mantenuta in memoria a livello di server, assicurando tempi di risposta inferiori a 50ms per le chiamate API mobile.
+*   **Società Sportive (Canale B2B / Enterprise)**:
+    *   Effettuano l'accesso tramite credenziali classiche (Email Istituzionale + Password) oppure tramite **Enterprise Single Sign-On (Microsoft Entra ID)**.
+    *   Al login con Microsoft Entra, lo strato Spring Security Resource Server convalida il token emesso da Microsoft, e il componente interno `UserProvisioningService` effettua il provisioning o la sincronizzazione dinamica dell'anagrafica e dei ruoli dell'utente in tempo reale all'interno del database Jmix, garantendo massima compliance aziendale.
+*   **Super Amministratori (Canale Cockpit Admin)**:
+    *   Accedono tramite l'interfaccia Jmix Cockpit protetta da Spring Security con sessione stateful standard (Cookie + Session HTTP protetti).
 
 ---
 
 ## ⚡ Flussi di Lavoro Principali (Core Use Cases)
 
-### 1. Registrazione dell'Atleta e "Claiming" del Profilo
-Il valore aggiunto di Sporteca per l'atleta è l'associazione istantanea con la sua carriera sportiva reale senza necessità di inserimento manuale.
+### 1. Registrazione e Convalida Minorile (UC-01)
+I minorenni under 14 avviano autonomamente il flusso social/classico fornendo l'email del genitore. L'account è attivato (stato `ACTIVE_UNVALIDATED`) solo dopo la doppia conferma via email (minore + link di consenso esplicito del genitore).
 
-```
-[ Atleta ]                            [ App Flutter ]                     [ Jmix Backend ]               [ DB MySQL Core ]
-    |                                        |                                    |                              |
-    | 1. Inserisce Nome/Cognome, Nascita ---->|                                    |                              |
-    |                                        | 2. Chiamata POST /api/register --->|                              |
-    |                                        |                                    | 3. Query corrispondenze ---->|
-    |                                        |                                    |<-4. Ritorna profili scraper--|
-    |                                        |<--5. Mostra lista profili trovati--|                              |
-    | 6. Seleziona "Sono io!" -------------->|                                    |                              |
-    |                                        | 7. POST /api/players/claim -------->|                              |
-    |                                        |    (Invia prove/identità)          | 8. Associa User UUID         |
-    |                                        |                                    |    a Player ID ------------->|
-    |                                        |                                    | 9. Salva stato "CLAIMED" ----|
-    |                                        |<--10. Profilo associato con successo|                              |
-```
+### 2. Recupero Password Stateless (UC-03)
+Il vecchio meccanismo basato su domande di sicurezza ed email con link temporanei in chiaro è eliminato. Il recupero password avviene in modo sicuro tramite **One-Time Passcode (OTP)** a 6 cifre inviato via email/SMS con scadenza di 10 minuti, oppure tramite **Magic Link** temporaneo firmato con JWT che autorizza istantaneamente la pagina di reset password sul client.
 
-*Nota:* Nella fase MVP, per velocizzare l'adozione, il processo di claim può essere automatico se la corrispondenza dei dati inseriti (es. Codice Fiscale o combinazione Nome-Cognome-Data di Nascita) è univoca, oppure può finire in una coda di moderazione visibile nel pannello del **Super Amministratore**.
-
----
-
-## 2. Ricerca e Scouting delle Company
-Le Company accedono a uno strumento avanzato di filtraggio per la selezione di atleti.
-
-```
-[ Company ]                           [ Jmix Web Portal ]                 [ Jmix Backend ]               [ DB MySQL Core ]
-    |                                        |                                    |                              |
-    | 1. Imposta filtri (es. "Attaccanti     |                                    |                              |
-    |    2001, Basilicata, >10 gol") -------->|                                    |                              |
-    |                                        | 2. Esegue query filtrata --------->|                              |
-    |                                        |                                    | 3. SELECT JOIN players       |
-    |                                        |                                    |    & player_stats ---------->|
-    |                                        |                                    |<-4. Ritorna record ----------|
-    |                                        |<--5. Mostra griglia risultati------|                              |
-```
-
----
-
-## 3. Integrazione Esterna (Widget Generico per Siti Club / WordPress)
-Una delle funzionalità chiave richieste è la capacità di integrare le statistiche in tempo reale direttamente sui siti web delle società (spesso realizzati in WordPress).
-
-* **La Soluzione:** Il backend Jmix espone un set di API REST pubbliche a sola lettura (`/api/public/v1/teams/{team_id}/standings` e `/api/public/v1/teams/{team_id}/roster`).
-* **La Sicurezza:** L'accesso a queste API è regolato tramite una **API Key pubblica** (Token) univoca per ciascuna Company, inseribile nelle impostazioni del plugin WordPress o di uno script JavaScript incorporabile (iframe o fetch nativa).
-* **Il Risultato:** La società sportiva visualizza sul proprio sito ufficiale la classifica e la rosa dei giocatori sempre aggiornate in automatico, senza dover scrivere codice o effettuare aggiornamenti manuali.
+### 3. Sincronizzazione ed Ingestione Enterprise (UC-09)
+Grazie all'integrazione di Microsoft Entra ID, i dipendenti delle Società non devono ricordare password locali. I loro profili sono sincronizzati e i ruoli operativi Jmix sono assegnati in base ai gruppi di sicurezza Microsoft, minimizzando lo sforzo amministrativo.

@@ -1,116 +1,91 @@
-# 03 - Architettura Backend (Jmix & Spring Boot Engine) ⚙️☕
+# 03 - Architettura Backend Consolidata (Jmix & Spring Boot Engine) ⚙️☕
 
-Questo documento descrive la struttura del backend di **Sporteca**, incentrato sull'utilizzo del framework **Jmix** (basato su **Spring Boot**). Spiega come coniugare lo sviluppo rapido del back-office con la necessità di servire API REST stateless ad alte prestazioni per l'app Flutter mobile e i widget WordPress esterni.
+Questo documento descrive la struttura del backend di **Sporteca**, interamente concentrato all'interno del nuovo repository unificato **`sporteca-backend`**. Spiega come il framework **Jmix** (basato su **Spring Boot**) gestisca in modo integrato sia l'interfaccia di amministrazione Cockpit sia i servizi REST stateless ad alte prestazioni per le applicazioni client, con particolare attenzione all'integrazione di **Microsoft Entra ID** e dei **Social Logins**.
 
 ---
 
-## 🏗️ L'Approccio: Monolite Modulare (Modular Monolith)
+## 🏗️ Modello di Sviluppo: Backend Unificato ed Isolamento REST
 
-Anziché partire subito con un'architettura a microservizi distribuiti (complessa da gestire, testare e deployare per un solo sviluppatore), Sporteca adotta un approccio a **Monolite Modulare**.
+Tutti i vecchi sotto-servizi frammentati di `sporteca-api` confluiscono nel repository **`sporteca-backend`** sotto forma di pacchetti Java ordinati all'interno di un unico monolite Spring Boot altamente coeso e modulare.
 
-La base tecnologica è un'unica applicazione **Spring Boot** strutturata in moduli o Jmix Add-on interni nettamente separati. Se in futuro l'applicazione dovesse scalare a milioni di utenti, l'estrazione di un modulo specifico (es. il modulo per i pagamenti o per l'ingestione dati dello scraper) in un microservizio separato sarà pulita e richiederà modifiche minime al codice.
+L'applicazione si divide fisicamente e logicamente in due motori:
 
 ```
-+─────────────────────────────────────────────────────────────+
-|                     SPORTECA BACKEND CORE                   |
-|                      (Spring Boot App)                      |
-+─────────────────────────────────────────────────────────────+
-|                                                             |
-|   +──────────────────+   +──────────────────────────────+   |
-|   |   Modulo CORE    |   | Modulo COMPANY (Segregato)   |   |
-|   | - Anagrafiche    |   | - Bilanci (Futuro)           |   |
-|   | - Scraper Sync   |   | - Gestione Certificati       |   |
-|   | - Matching engine|   |   (Futuro)                   |   |
-|   +────────┬─────────+   +──────────────┬───────────────+   |
-|            |                            |                   |
-|            v                            v                   |
-|   +──────────────────+   +──────────────────────────────+   |
-|   |  Database CORE   |   |     Database SENSIBILE       |   |
-|   |  (MySQL Pubblico)|   |     (Multi-Tenant isolated)  |   |
-|   +──────────────────+   +──────────────────────────────+   |
-|                                                             |
-+─────────────────────────────────────────────────────────────+
++──────────────────────────────────────────────────────────────────────────────────────────+
+|                                     SPORTECA BACKEND                                     |
+|                       (Spring Boot 3.x + Jmix 2.x - Singolo Eseguibile)                  |
++──────────────────────────────────────────────────────────────────────────────────────────+
+|                                                                                          |
+|  [ Motore A: Jmix Flow UI (Stateful) ]     [ Motore B: REST API Modulari (Stateless) ]   |
+|  - Cockpit Amministrativo di Back-Office   - Esposizione endpoint per App / Web          |
+|  - Gestione Configurazioni Sport/Skills    - Moduli: Auth, Profiles, Localities, Skills  |
+|  - Flusso Validazione Anagrafica e Doc     - Isolato dal rendering grafico Vaadin        |
+|                                                                                          |
++──────────────────────────────────────────────────────────┬───────────────────────────────+
+                                                           |
+                                                           v
+                                            [ Database Unificato (MySQL) ]
+                                            - Tabelle Jmix standard (Utenti, Ruoli)
+                                            - Tabelle di Configurazione Sport & Skills
+                                            - Tabelle profili segregati per tenant
 ```
 
 ---
 
-## ⚡ Il "Doppio Motore": Jmix Web UI + Spring REST puro
+## 🔒 Architettura di Sicurezza e Canali di Autenticazione
 
-Il problema comune dei framework RAD (Rapid Application Development) come Jmix/Cuba è che sono ottimizzati per applicazioni web "stateful" (interfaccia desktop-web ricca). Per risolvere questo problema e garantire la massima scalabilità a Sporteca, utilizzeremo un **approccio a due velocità** all'interno dello stesso progetto:
+La configurazione di Spring Security nel backend gestisce simultaneamente tre canali di autenticazione distinti, emulando il collaudato pattern del sistema enterprise di riferimento (`onepro-backend`):
 
-### 1. Il Motore Jmix (Per i Portali Web Amministrativi)
-* Sfrutta le tecnologie visuali integrate di Jmix per generare istantaneamente e in sicurezza le interfacce web responsive per il **Super Admin** e il **Portale Company**.
-* Questo elimina il 100% dello sforzo di programmazione di form, tabelle di filtri, export dati e pannelli di gestione dei permessi utente.
+### 1. Canale Amministrativo (Jmix Cockpit Web UI)
+*   **Tecnologia**: Stateful, basato su cookie di sessione protetti e Spring Security HTTP Session.
+*   **Attori**: Super Amministratori e operatori del Back-Office.
+*   **Flusso**: Autenticazione classica tramite Username e Password locali verificati sul database Jmix.
 
-### 2. Il Motore Spring REST Puro (Per Flutter e WordPress)
-* Per comunicare con l'App Mobile Flutter e con i siti terzi (WordPress/Widget), scriveremo dei normalissimi `@RestController` di Spring Boot.
-* Questi controller bypassano completamente il motore grafico pesante di Jmix. Sfruttano direttamente lo strato dei servizi (Spring Services) e i Repository JPA per restituire dati JSON leggeri e performanti.
-* Questo garantisce tempi di risposta in millisecondi (sub-50ms) e la possibilità di gestire migliaia di richieste concorrenti con consumo minimo di RAM.
+### 2. Canale Social Stateless (App Flutter / Atleti e Staff)
+*   **Tecnologia**: Stateless JWT (JSON Web Tokens).
+*   **Attori**: Atleti, Staff, Genitori.
+*   **Flusso**:
+    1.  L'utente esegue l'autenticazione tramite Google o Apple OAuth2.
+    2.  Il client invia il token del provider a `/api/v1/auth/social-login`.
+    3.  Il backend convalida il token esternamente e genera una coppia di token locali:
+        *   **Access Token (JWT)**: Firmato asimmetricamente con chiave privata del server.
+        *   **Refresh Token**: Memorizzato a database per mantenere attiva la sessione sul dispositivo mobile senza richiedere continui re-login.
+    4.  Le chiamate successive alle API includono il JWT nell'header: `Authorization: Bearer <token>`.
 
----
-
-## 🔒 Sicurezza e Autenticazione (Stateless JWT)
-
-La sicurezza e l'identificazione degli utenti seguono due canali distinti:
-
-1. **Sessione State-full (Portale Web Jmix):** Gestita in automatico da Jmix (Spring Security con sessione HTTP e cookie protetti) per gli utenti amministratori e le società sportive che usano il browser.
-2. **Sessione State-less (App Mobile Flutter):**
-   * L'atleta esegue il login inserendo email/password (o tramite Social Login).
-   * Il backend valida le credenziali e genera un token **JWT (JSON Web Token)** firmato asimmetricamente (con chiave privata protetta in GCP Secret Manager).
-   * L'app Flutter memorizza il token in modo sicuro (tramite `flutter_secure_storage`) e lo invia nell'header di ogni chiamata API: `Authorization: Bearer <token>`.
-   * Il backend convalida il JWT in modo totalmente stateless (senza fare query di sessione al DB), decodifica il payload ed estrae l'UUID dell'atleta loggato.
-
----
-
-## 🌐 Internazionalizzazione (i18n) a Livello Backend
-
-Oltre ai testi statici dell'interfaccia mobile (gestiti in Flutter), il backend deve supportare risposte multilingua dinamiche.
-
-### 1. Gestione dei Messaggi e delle Eccezioni
-Spring Boot gestisce nativamente la localizzazione tramite file di risorse (`.properties`).
-* Creeremo i file `messages.properties`, `messages_it.properties`, `messages_en.properties` all'interno delle risorse Spring.
-* Quando il codice lancia un'eccezione o invia una notifica, la stringa viene recuperata dinamicamente tramite il componente `MessageSource` basandosi sulla lingua specificata nel parametro HTTP `Accept-Language`.
-
-```java
-@Autowired
-private MessageSource messageSource;
-
-public String getLocalizedError(String messageKey, Locale locale) {
-    return messageSource.getMessage(messageKey, null, locale);
-}
-```
-
-### 2. Gestione Dati Dinamici Tradotti nel DB (MySQL JSON Columns)
-Per evitare complesse tabelle di join (es. `ruolo_calciatore` e `ruolo_calciatore_translations`), utilizzeremo colonne di tipo **JSON** (supportate nativamente e in modo performante da MySQL 8.0/PostgreSQL).
-
-* **La Struttura del Record nel DB:**
-  ```json
-  // Tabella: positions (Ruoli)
-  {
-    "id": 1,
-    "code": "STRIKER",
-    "name": {
-      "it": "Attaccante",
-      "en": "Striker",
-      "es": "Delantero"
-    }
-  }
-  ```
-* **L'Estrazione:** Nel nostro `@RestController`, quando inviamo la lista dei ruoli all'app mobile, il mapper Java leggerà la lingua dell'utente (dall'header) ed estrarrà esclusivamente la chiave corretta dal JSON prima di inviare la risposta:
-  ```json
-  // Risposta inviata al client italiano
-  {
-    "id": 1,
-    "code": "STRIKER",
-    "name": "Attaccante"
-  }
-  ```
+### 3. Canale Enterprise SSO (Società Sportive - Company)
+*   **Tecnologia**: Spring Security OAuth2 Resource Server integrato con **Microsoft Entra ID (Azure AD)**.
+*   **Attori**: Dipendenti e collaboratori delle Società Sportive.
+*   **Flusso**:
+    1.  L'utente della Società effettua l'autenticazione sul portale federato di Microsoft Entra.
+    2.  Il browser/client riceve il token JWT emesso da Microsoft.
+    3.  Il client include questo token JWT in ogni chiamata API.
+    4.  Lo strato Spring Security Resource Server di `sporteca-backend` intercetta l'header, scarica le chiavi pubbliche di firma Microsoft tramite l'indirizzo configurato **JWKS** (con caching locale), e convalida la firma del token in modo asincrono e stateless.
 
 ---
 
-## ⚡ Predisposizione Real-Time: Websocket
+## 🔄 Il Pattern di Provisioning Dinamico (`UserProvisioningService`)
 
-Per abilitare aggiornamenti in tempo reale (ad esempio notifiche istantanee, messaggi di chat o aggiornamenti live dei risultati delle partite nell'app mobile):
-* Configureremo lo strato di **Spring WebSocket** con protocollo STOMP (Simple Text Oriented Messaging Protocol).
-* Per l'MVP configureremo un broker in-memory leggero.
-* Quando l'applicazione scalerà a livello globale e avremo più istanze del backend dietro un bilanciatore, collegheremo le Websocket a un broker esterno come **Redis Pub/Sub** (ospitato in modalità gestita su Google Cloud Memorystore) per sincronizzare i messaggi tra tutti i server.
+Per supportare l'autenticazione tramite Microsoft Entra ID senza richiedere all'amministratore di creare manualmente le anagrafiche dei dipendenti delle società prima del loro primo accesso, il backend implementa il pattern **`UserProvisioningService`** (estratto dal progetto di riferimento `onepro-backend`).
+
+Quando un JWT valido da Microsoft Entra ID arriva per la prima volta:
+1.  Il `JwtTokenAuthenticationConverter` estrae i claims principali (`preferred_username`, `email`, `given_name`, `family_name`, e i gruppi/ruoli di appartenenza).
+2.  Delega la risoluzione al componente **`UserProvisioningService.solve()`**:
+    *   **Se l'utente non esiste**: Crea un'istanza dell'entità `User` Jmix, genera una password casuale forte tramite `SecureRandom` e la cripta, imposta lo stato a `ACTIVE_UNVALIDATED` e la salva a DB.
+    *   **Se l'utente esiste**: Aggiorna i campi di contatto istituzionali.
+3.  **Sincronizzazione Dinamica dei Ruoli**:
+    *   Il servizio mappa i gruppi di sicurezza Microsoft nei ruoli di sicurezza Jmix (`ResourceRole` e `RowLevelRole`).
+    *   Crea i record nella tabella Jmix `RoleAssignmentEntity` per associare all'istante l'utente ai permessi corretti.
+    *   Rimuove automaticamente i permessi di sicurezza Jmix non più elencati nel JWT, garantendo l'immediata revoca dell'accesso in caso di disabilitazione aziendale dell'utente.
+
+---
+
+## 🚀 Isolamento delle API REST per Client ed Embed
+
+Tutte le API REST destinate ad essere consumate dall'App mobile e dai widget esterni (es. WordPress) sono implementate tramite classici `@RestController` di Spring Boot.
+
+Questi controller:
+1.  **Isolamento**: Non hanno alcuna dipendenza grafica con Vaadin o con il motore Flow UI di Jmix.
+2.  **Prestazioni**: Interrogano direttamente lo strato dei servizi Spring e utilizzano `UnconstrainedDataManager` o query native JPQL per azzerare l'overhead di caricamento delle schermate visuali, garantendo risposte sub-50ms.
+3.  **Internazionalizzazione (i18n)**:
+    *   Le tabelle dinamiche (es. nomi dei ruoli, categorie) contengono colonne MySQL di tipo **JSON** (es. `{"it": "Attaccante", "en": "Striker"}`).
+    *   I controller leggono l'header HTTP `Accept-Language` e restituiscono solo la traduzione corrispondente al client, mantenendo il payload JSON compatto ed efficiente.
