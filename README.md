@@ -61,7 +61,8 @@ Questa cartella definisce **cosa** fa l'applicazione, le logiche di business, la
 Questa cartella definisce **come** viene costruita l'applicazione e le scelte tecnologiche.
 *   `01-system-overview.md`: Panoramica ad alto livello degli attori del sistema, della separazione dei canali di autenticazione e del backend unificato.
 *   `02-frontend-and-mobile.md`: Architettura della Web App React e dei widget da incorporare in siti WordPress.
-*   `03-jmix-backend.md`: Scelte tecniche del backend Spring Boot + Jmix unificato (doppio motore stateful/stateless, Resource Server JWT per Microsoft Entra ID/Social, i18n dinamico).
+*   `03-jmix-backend.md`: Scelte tecniche del backend Spring Boot + Jmix unificato (doppio motore stateful/stateless, i18n dinamico).
+*   `03-authentication-sso-architecture.md`: Valutazione dei plugin Jmix SAML e OpenID Connect, integrazione SSO per il Back-office e strato API JWT stateless per React/Flutter.
 *   `04-database-and-media.md`: Schema relazionale MySQL e gestione file multimediali su Google Cloud Storage.
 *   `04-database-schema-and-scraper-alignment.md`: Disegno di dettaglio del database di backend, modello dati dello scraper ed il flusso di Claiming dei profili atleti.
 *   `07-payments-billing-comms.md`: Integrazioni esterne per pagamenti (Stripe), fatturazione (FattureInCloud) e notifiche (SendGrid).

@@ -26,7 +26,8 @@ docs/01-architecture/
 ├── 02-frontend/
 │   └── 02-frontend-and-mobile.md       # Flutter per client, Widget Embed per siti terzi
 ├── 03-backend/
-│   └── 03-jmix-backend.md              # sporteca-backend Jmix/Spring, JWT, Microsoft Entra SSO, provisioning
+│   ├── 03-jmix-backend.md              # sporteca-backend Jmix/Spring, JWT, Microsoft Entra SSO, provisioning
+│   └── 03-authentication-sso-architecture.md # Valutazione Jmix SAML/OIDC, sicurezza REST stateless ed SSO Backoffice
 ├── 04-database-and-storage/
 │   ├── 04-database-and-media.md        # Segregazione tenant, schema MySQL e Google Cloud Storage
 │   └── 04-database-schema-and-scraper-alignment.md # Allineamento schema DB, scraper e flusso di Claiming dei profili
