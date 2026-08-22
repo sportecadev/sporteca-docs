@@ -1,14 +1,20 @@
-# 04 - Allineamento Database Relazionale e Scraper Data Model 📊🏈
+# 04 - Allineamento Database Relazionale e Registro Federale delle Prestazioni 📊🏈
 
-Questo documento descrive il disegno dettagliato del modello dati relazionale di **Sporteca** (persisto su **MySQL 8.x** gestito da **Jmix & Spring Boot**) e definisce come questi dati si integrano e si allineano con i dati raccolti periodicamente in modo asincrono dallo **Scraper Tuttocampo**.
+Questo documento descrive il disegno dettagliato del modello dati relazionale di **Sporteca** (persisto su **MySQL 8.x** gestito da **Jmix & Spring Boot**) e definisce come questi dati si integrano e si allineano con l'**Anagrafica Federale / Registro Nazionale delle Prestazioni** (`fed_`), superando il concetto di semplice "scraper" ed elevando lo strato dati ad un'autorità sportiva federata ad alta scalabilità.
 
 ---
 
-## 🏛️ 1. Il Modello Dati del Core Backend (Jmix/Spring Boot)
+## 🏛️ 1. Mappatura dei Prefissi delle Tabelle di Backend
 
-Di seguito viene illustrata la modellazione a livello di database per la gestione di autenticazioni multiple, profilazione smart con relazioni tutore-minore e configurazione multi-sport dinamica.
+Per garantire la massima leggibilità, auditing e coerenza strutturale nel framework Jmix, le tabelle del database sono divise in tre sole categorie tassonomiche distinte:
 
-### 👤 A. Area Account & Profilo (Multi-Identità e Multi-Figlio)
+1.  **Tabelle del Dominio Core & Tabelle Tassonomiche (senza prefisso)**: Contengono i dati operativi del monorepo, inclusi i profili, le relazioni tutore-minore, le squadre reali, i consensi GDPR e tutti i dizionari di riferimento (es. `accounts`, `profiles`, `teams`, `legal_documents`, `account_consents`, `sports`, `categories`, `roles`, `skills`, `countries`). Jmix gestirà l'eventuale prefisso applicativo SPT a monte in automatico.
+2.  **Tabelle di Configurazione UI & Runtime (prefisso `cfg_`)**: Memorizzano i layout e le regole delle interfacce dinamiche ed i form reattivi (es. `cfg_sport_attribute_definitions`, `cfg_sport_roles`, `cfg_sport_category_skills`).
+3.  **Tabelle del Registro Sportivo Federato (prefisso `fed_`)**: L'anagrafica nazionale indipendente di atleti, squadre e prestazioni (es. `fed_championships`, `fed_teams`, `fed_players`, `fed_player_performances`). Può essere alimentato in modo del tutto trasparente da scraper automatici, fogli Excel o inserimenti manuali del back-office.
+
+---
+
+## 👤 2. Area Account & Profilo (Multi-Identità, Multi-Figlio e GDPR)
 
 ```
        [ AuthMethod ] (N)
@@ -26,32 +32,20 @@ Di seguito viene illustrata la modellazione a livello di database per la gestion
 
 #### Tabella: `accounts` (Identità centralizzata)
 *   `id` (VARCHAR(36) / UUID, PK)
-*   `email` (VARCHAR(150), Univoca, Not Null): Email unica dell'utente.
+*   `email` (VARCHAR(150), Univoca, Not Null): Email unica (ammessi domini personali consumer per tutti, comprese le Società).
 *   `username` (VARCHAR(50), Univoco, Not Null)
 *   `birth_date` (DATE, Not Null)
 *   `active` (BOOLEAN, Not Null)
 *   `status` (VARCHAR(30), Not Null): `PENDING_ACTIVATION`, `PENDING_PARENT_CONSENT`, `ACTIVE_UNVALIDATED`, `ACTIVE_VALIDATED`, `SUSPENDED`.
+*   `creation_provider` (VARCHAR(30)): Canale di origine (`LOCAL`, `GOOGLE`, `APPLE`).
+*   `primary_provider` (VARCHAR(30)): Canale d'accesso attivo.
 
-#### Tabella: `auth_methods` (Moltissime credenziali legate allo stesso Account)
+#### Tabella: `auth_methods` (Unione dei canali d'accesso)
 *   `id` (BIGINT, PK, AutoIncrement)
 *   `account_id` (UUID, FK -> `accounts`)
-*   `provider` (VARCHAR(30), Not Null): `LOCAL`, `GOOGLE`, `APPLE`, `INSTAGRAM`, `MICROSOFT_ENTRA`.
-*   `provider_user_id` (VARCHAR(150), Nullable): L'identificativo fornito dal provider social o aziendale (es. OAuth `sub` claim).
-*   `password_hash` (VARCHAR(255), Nullable): Popolato solo se `provider = LOCAL`.
-
-#### Tabella: `profiles` (Contenitore del Profilo)
-*   `id` (VARCHAR(36) / UUID, PK)
-*   `account_id` (UUID, FK -> `accounts`): Relazione con l'account creatore.
-*   `type` (VARCHAR(20), Not Null): `ATHLETE`, `COMPANY`, `STAFF`.
-*   `validation_status` (VARCHAR(30), Not Null): `PENDING_REVIEW`, `APPROVED`, `REJECTED`.
-
-#### Tabella: `profile_personal_infos` (Anagrafica Atleta/Staff)
-*   `id` (BIGINT, PK)
-*   `profile_id` (UUID, FK -> `profiles`)
-*   `first_name` (VARCHAR(50), Not Null)
-*   `last_name` (VARCHAR(50), Not Null)
-*   `fiscal_code` (VARCHAR(16), Univoco, Not Null)
-*   `claimed_scraped_player_id` (VARCHAR(36), Nullable, FK -> `scraped_players`): **IL PONTE**: Riferimento all'atleta reale caricato dallo scraper.
+*   `provider` (VARCHAR(30), Not Null)
+*   `provider_user_id` (VARCHAR(150), Unique)
+*   `password_hash` (VARCHAR(255), Nullable): Password locale. Sbiacata/disabilitata se `primary_provider` != `LOCAL`.
 
 #### Tabella: `profile_guardian_relations` (Relazione Multi-Figlio Tutore-Minore)
 *   `id` (BIGINT, PK)
@@ -60,103 +54,89 @@ Di seguito viene illustrata la modellazione a livello di database per la gestion
 
 ---
 
-### ⚙️ B. Area Multi-Sport Dinamico (MySQL JSON Columns per i18n)
+## 🔒 3. Gestione Consensi GDPR & Termini Versionati (Legal Auditing)
 
-Per supportare la scalabilità su qualsiasi sport (calcio, basket, volley) senza costringere a modifiche di schema, le tabelle di configurazione utilizzano colonne di tipo `JSON` per la memorizzazione dei testi multilingua:
+Per garantire la massima conformità legale e tracciabilità, i flag di privacy e termini non sono semplici booleani statici in tabella (che perderebbero lo storico), ma sono gestiti tramite un **Registro dei Consensi Versionato**:
 
-```
-[ Sport ] (1) ───► [ SportRole ] ◄─── (1) [ Role ]
-                             ▲
-                             │ (1)
-                             │
-                      [ ProfileSkills ] ◄─── (1) [ Profile ]
-```
+#### Tabella: `legal_documents` (Dizionario Documenti Legali)
+Archivia i documenti e le versioni attive nel sistema.
+*   `id` (BIGINT, PK)
+*   `document_code` (VARCHAR(50)): `PRIVACY_POLICY`, `TERMS_AND_CONDITIONS`, `MARKETING_CONSENT`, `PROFILING_CONSENT`.
+*   `name` (VARCHAR(100)): Es. *"Condizioni Generali di Contratto"*.
+*   `version` (VARCHAR(20)): Es. *"1.0"*, *"1.1"*.
+*   `file_path` (VARCHAR(255)): Percorso del file PDF caricato su Google Cloud Storage.
+*   `mandatory` (BOOLEAN): Se obbligatorio per l'attivazione dell'account.
+*   `active` (BOOLEAN): Indica se è la versione corrente che tutti gli utenti devono aver firmato.
 
-*   **`sports`**: `id` (PK), `code` (es. `SOCCER_11`), `name` (JSON translation, es. `{"it": "Calcio", "en": "Soccer"}`), `active` (BOOLEAN).
-*   **`categories`**: `id` (PK), `name` (JSON), `description` (JSON).
-*   **`roles`**: `id` (PK), `code`, `name` (JSON), `type` (`ATHLETE_ROLE`, `STAFF_ROLE`).
-*   **`skills`**: `id` (PK), `code` (es. `SPEED`), `name` (JSON), `data_type` (`NUMBER`, `BOOLEAN`).
+#### Tabella: `account_consents` (Registro Firme Consensi)
+Crea una prova legale inoppugnabile del consenso. Nessun record viene cancellato o modificato, si inserisce un nuovo record a ogni aggiornamento di policy.
+*   `id` (BIGINT, PK, AutoIncrement)
+*   `account_id` (UUID, FK -> `accounts`): L'account destinatario del consenso (atleta o minore).
+*   `legal_document_id` (BIGINT, FK -> `legal_documents`): Il documento e la versione specifica firmata.
+*   `consent_given` (BOOLEAN): `true` se accettato, `false` se revocato (per i consensi opzionali).
+*   `signed_at` (TIMESTAMP): Data e ora esatta della firma digitale.
+*   `signed_by_guardian_account_id` (UUID, Nullable, FK -> `accounts`): **IL CAPOLAVORO**: Se l'atleta è un minore under 14, questo campo memorizza l'UUID dell'Account del Genitore che ha firmato legalmente per suo conto, garantendo totale tracciabilità.
+*   `ip_address` (VARCHAR(45)): IP del firmatario.
 
 ---
 
-## 🕷️ 2. Il Modello Dati dello Scraper (Tuttocampo.it)
+## ⚽ 4. Modulo Multi-Sport Dinamico (Allineamento PrimeNG Form)
 
-I dati estratti dallo scraper Python vengono riversati periodicamente in tabelle dedicate del database MySQL. La struttura rispecchia l'anagrafica reale e le statistiche dei campionati:
+I parametri biometrici comuni (`Weight`, `Height`) sono memorizzati in colonne relazionali fisiche standard. I parametri tecnici sport-specifici vengono invece estratti in un'unica colonna nativa **JSON `sport_attributes`** (es: `{"vertical_jump_cm": 95, "preferred_foot": "LEFT"}`).
 
-### Tabella: `scraped_championships` (Campionati)
-*   `id` (VARCHAR(36) / UUID, PK): Identificativo univoco del campionato.
-*   `sport_code` (VARCHAR(30), Not Null): Es. `SOCCER_11`, `BASKETBALL`.
+La generazione e la validazione dei campi di input a schermo nel frontend (React/Flutter) sono guidate interamente da metadati salvati a database, mappati sulla struttura dei **`FormField` reattivi di PrimeNG**:
+
+#### Tabella: `cfg_sport_attribute_definitions` (Metadata Form UI)
+*   `id` (BIGINT, PK)
+*   `sport_id` (BIGINT, FK -> `sports`)
+*   `attribute_code` (VARCHAR(50)): Chiave JSON (es. `vertical_jump_cm`).
+*   `type` (VARCHAR(20)): Tipo di input (`text`, `number`, `select`, `multiselect`, `checkbox`).
+*   `label_json` (JSON): Etichette localizzate.
+*   `placeholder_json` (JSON): Placeholder localizzati.
+*   `help_text_json` (JSON): Testi di aiuto localizzati.
+*   `columns` (INTEGER): Larghezza responsive della colonna nella griglia del form UI (xs/md/lg).
+*   `validators_json` (JSON): Array di validatori mappato su `FieldValidator[]` (es. `required`, `min: 10`, `max: 250`).
+*   `options_json` (JSON): Lista di opzioni `{value, label}` localizzate per i campi di tipo `select` o `multiselect`.
+
+---
+
+## 📊 5. Il Modello Dati del Registro Federale (`fed_` Tables)
+
+I dati degli atleti e delle prestazioni reali sono memorizzati in tabelle del Registro Federale, completamente separate e disaccoppiate dalle fonti dati esterne o dallo scraper:
+
+### Tabella: `fed_championships` (Campionati)
+*   `id` (VARCHAR(36) / UUID, PK)
+*   `sport_id` (BIGINT, FK -> `sports`)
 *   `name` (VARCHAR(150), Not Null): Es. *Seconda Categoria - Girone A*.
 *   `season` (VARCHAR(15), Not Null): Es. *2025/2026*.
-*   `last_scraped_at` (TIMESTAMP)
+*   `last_updated` (TIMESTAMP)
 
-### Tabella: `scraped_teams` (Squadre)
+### Tabella: `fed_teams` (Società/Squadre del Registro)
 *   `id` (VARCHAR(36) / UUID, PK)
-*   `name` (VARCHAR(100), Not Null): Nome societario (es. *A.C. Milan*).
-*   `logo_url` (VARCHAR(255), Nullable): Link locale o remoto dell'emblema squadra.
+*   `name` (VARCHAR(100), Not Null): Nome societario.
+*   `logo_url` (VARCHAR(255), Nullable)
 
-### Tabella: `scraped_players` (Atleti Reali Tracciati)
-*   `id` (VARCHAR(36) / UUID, PK): L'identificativo dell'atleta reale estratto dal portale Tuttocampo.
-*   `first_name` (VARCHAR(50))
-*   `last_name` (VARCHAR(50))
-*   `current_team_id` (UUID, FK -> `scraped_teams`): Squadra corrente in cui gioca.
+### Tabella: `fed_players` (Atleti Reali Tracciati)
+*   `id` (VARCHAR(36) / UUID, PK)
+*   `first_name` (VARCHAR(50)), `last_name` (VARCHAR(50))
+*   `current_team_id` (UUID, FK -> `fed_teams`)
 *   `photo_url` (VARCHAR(255))
 
-### Tabella: `scraped_player_stats` (Statistiche Atleti per Campionato)
+### Tabella: `fed_player_performances` (Statistiche Atleti)
 *   `id` (BIGINT, PK, AutoIncrement)
-*   `player_id` (UUID, FK -> `scraped_players`)
-*   `championship_id` (UUID, FK -> `scraped_championships`)
-*   `goals` (INT)
-*   `penalties` (INT)
-*   `assists` (INT)
-*   `caps` (INT): Presenze in campo.
+*   `player_id` (UUID, FK -> `fed_players`)
+*   `championship_id` (UUID, FK -> `fed_championships`)
+*   `goals` (INT), `penalties` (INT), `assists` (INT), `caps` (INT)
 *   `rating` (DECIMAL(3,2)): Media voto delle prestazioni.
+*   `last_updated` (TIMESTAMP)
 
 ---
 
-## 🌉 3. L'Orchestrazione ed il Collegamento dei Due Mondi (Claim Flow)
+## 🌉 6. Il Flusso di Associazione Identità Federale (Claim Flow)
 
-La parte più innovativa ed importante del sistema è **l'orchestra di collegamento** tra l'anagrafica istituzionale degli utenti registrati ed i dati reali sportivi estratti in automatico dallo scraper.
+L'atleta registrato rivendica la propria identità sportiva associandosi ad una scheda reale del registro `fed_players`:
 
-### Il Flusso di Claiming (Rivendicazione del Profilo):
-
-```
-[ Atleta Registrato ]             [ Client App ]             [ sporteca-backend ]        [ Scraper DB (scraped_players) ]
-          │                             │                             │                                 │
-          │ 1. Cerca il proprio nome    │                             │                                 │
-          │    e squadra di appartenenza│                             │                                 │
-          |---------------------------->|                             │                                 │
-          │                             │ 2. Esegue query di ricerca ──────────────────────────────────>│
-          │                             │    su scraped_players ed    │                                 │
-          │                             │    espone i risultati reali │                                 │
-          │                             |<────────────────────────────│                                 │
-          │ 3. Seleziona il proprio     │                             │                                 │
-          │    atleta reale Tuttocampo  │                             │                                 │
-          |---------------------------->|                             │                                 │
-          │                             │ 4. Richiesta di CLAIM (con  │                                 │
-          │                             │    invio documento d'identità)                                │
-          │                             |────────────────────────────>|                                 │
-          │                             │                             │ 5. L'operatore valida il match  │
-          │                             │                             │    (CF e foto coincidono)       │
-          │                             │                             │ 6. Imposta ForeignKey           │
-          │                             │                             │    claimed_scraped_player_id    │
-          │                             │                             │    sul profilo reale            │
-          │                             |<────────────────────────────│                                 │
-          │ 7. Profilo Collegato!       │                             │                                 │
-          │    Mostra dashboard con     │                             │                                 │
-          │    statistiche reali.       │                             │                                 │
-```
-
-1.  **Registrazione ed Iscrizione Atleta**: L'atleta si registra regolarmente su Sporteca seguendo il routing smart (UC-09) e compila il suo profilo anagrafico inserendo Nome, Cognome, Data di Nascita e Codice Fiscale.
-2.  **Ricerche di Identità**: Dalla dashboard utente (stato `ACTIVE_UNVALIDATED`), l'atleta seleziona *"Collega le tue statistiche reali"*. Inserisce il proprio nome o la squadra dilettantistica in cui gioca.
-3.  **Visualizzazione del Match**: Il client effettua una ricerca sulla tabella delle anagrafiche dello scraper (`scraped_players`) e mostra a schermo le schede corrispondenti con l'elenco delle statistiche storiche per ciascun campionato (`scraped_player_stats`).
-4.  **Flusso di Richiesta Claim (Claiming Request)**: L'atleta seleziona la propria anagrafica e invia la richiesta di associazione. Per validare l'identità, il sistema richiede il caricamento del documento d'identità (front/back).
-5.  **Validazione Back-Office**: L'operatore del back-office Jmix esamina la richiesta:
-    *   Verifica che il Codice Fiscale del profilo e il Nome/Cognome dell'atleta corrispondano con il documento e con la scheda reale tracciata da Tuttocampo.
-    *   Se il controllo è positivo, approva la richiesta.
-6.  **Join del DB e Aggiornamento Real-time**:
-    *   Il sistema imposta la colonna **`claimed_scraped_player_id`** dell'entità `ProfilePersonalInfo` dell'atleta puntando all'UUID della tabella `scraped_players`.
-    *   Il profilo dell'atleta passa a `ACTIVE_VALIDATED`.
-7.  **Sincronizzazione della Dashboard**:
-    *   Da questo momento, ogni volta che l'atleta apre la propria applicazione client, il backend esegue una `LEFT JOIN` tra il profilo e le tabelle `scraped_players` e `scraped_player_stats`.
-    *   L'utente visualizza all'istante la rosa della sua squadra reale, la classifica aggiornata in automatico del suo campionato e le sue prestazioni reali di goal, presenze e voti estratti in background dallo scraper, senza dover inserire manualmente alcun dato!
+1.  **Richiesta di Ricerca**: Dalla dashboard, l'atleta cerca il proprio nome o la squadra reale nella tabella `fed_players`.
+2.  **Associazione ed Invio Documento (Claim)**: Seleziona il proprio record reale e richiede l'associazione caricando i documenti d'identità (UC-05).
+3.  **Approvazione AI & Operatore (UC-07)**: La pipeline AI (o l'operatore) convalida i dati. In caso di esito positivo, il backend imposta la chiave esterna **`claimed_federated_player_id`** dell'entità `ProfilePersonalInfo` dell'atleta puntando all'UUID dell'atleta in `fed_players`.
+4.  **Dashboard Sincronizzata**: Da questo momento, ad ogni accesso del client, il backend esegue una `LEFT JOIN` tra il profilo e le tabelle `fed_players` e `fed_player_performances`, mostrando all'istante le statistiche reali di goal, presenze e voti aggiornati.

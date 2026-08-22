@@ -38,9 +38,12 @@ Il progetto è strutturato come un monorepo modulare con responsabilità ben iso
 
 La cartella `sporteca-docs/docs/` definisce le specifiche di business e architetturali di Sporteca:
 
-### 🎯 A. `00-requirements-analysis/` (Perimetro di Business)
-Questa cartella definisce **cosa** fa l'applicazione, le logiche di business, la conformità legale e la strategia commerciale.
+### 🎯 A. `00-requirements-analysis/` (Perimetro di Business & Data Blueprint)
+Questa cartella definisce **cosa** fa l'applicazione, le logiche di business, la conformità legale, la strategia commerciale e le specifiche relazionali delle entità.
 *   **`01_decisioni_perimetro_mvp.md`**: Le linee di confine approvate per la prima release (funzionalità incluse ed escluse come Stonk, badge o chat).
+*   **`db/`**: Progettazione ed entità del database relazionale.
+    *   **`models.ts`**: Modelli TypeScript unificati che descrivono tutte le tabelle, tassonomie (`type_`), configurazioni (`cfg_`), relazioni e integrazione con il Registro Federale, allineati al form model reattivo di PrimeNG.
+    *   **`schema.dbml`**: Schema logico/sintattico in Database Markup Language (DBML), importabile su dbdiagram.io per la visualizzazione grafica interattiva, completo di relazioni e record di esempio.
 *   **`business_model/`**: Contiene la strategia di business e go-to-market.
     *   `bm-go-to-market.md`: Analisi dettagliata dei competitor (come *Profilo Sportivo*), differenziazione sulla sicurezza GDPR dei minori, e strategie di monetizzazione.
 *   **`use_cases/`**: I flussi d'uso dettagliati (UC-01 a UC-09) che descrivono i comportamenti del sistema:

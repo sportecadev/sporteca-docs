@@ -1,0 +1,375 @@
+// SPORTECA UNIFIED DATABASE SCHEMA BLUEPRINT 📊🏈
+// Docs: https://dbml.dbdiagram.io/docs
+// Target: MySQL 8.x Engine for Spring Boot + Jmix 2.x
+
+// =========================================================================
+// 1. CORE TRANSACTIONAL AREA
+// =========================================================================
+
+Table accounts {
+  id varchar(36) [pk, note: 'UUID central login identity']
+  email varchar(150) [unique, not null]
+  username varchar(50) [unique, not null]
+  birth_date date [not null]
+  active boolean [not null]
+  status varchar(30) [not null, note: 'PENDING_ACTIVATION, PENDING_PARENT_CONSENT, ACTIVE_UNVALIDATED, ACTIVE_VALIDATED, SUSPENDED']
+  creation_provider varchar(30) [not null]
+  primary_provider varchar(30) [not null]
+  
+  // GDPR & Legal Consents
+  terms_consent boolean [not null, note: 'Mandatory consent to terms & conditions']
+  privacy_consent boolean [not null, note: 'Mandatory consent to privacy policy']
+  marketing_consent boolean [not null, note: 'Optional marketing consent']
+  profiling_consent boolean [not null, note: 'Optional sports data profiling analytics consent']
+  consent_updated_at timestamp [not null]
+  
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table auth_methods {
+  id bigint [pk, increment]
+  account_id varchar(36) [not null]
+  provider varchar(30) [not null, note: 'LOCAL, GOOGLE, APPLE, INSTAGRAM, MICROSOFT_ENTRA, GOOGLE_WORKSPACE']
+  provider_user_id varchar(150) [unique]
+  password_hash varchar(255) [note: 'Nullable, masked/disabled (sbiacata) if external provider comanda login']
+  created_at timestamp
+}
+
+Table account_identity_audit_logs {
+  id bigint [pk, increment]
+  account_id varchar(36) [not null]
+  action_type varchar(50) [not null, note: 'ACCOUNT_CREATED, PROVIDER_LINKED, PRIMARY_PROVIDER_CHANGED, PASSWORD_DISABLED, etc.']
+  performed_by varchar(100) [not null, note: 'SYSTEM, USER, or operator username']
+  old_value varchar(255)
+  new_value varchar(255)
+  ip_address varchar(45) [not null]
+  timestamp timestamp [not null]
+}
+
+// =========================================================================
+// 2. DOMAIN DICTIONARIES & REFERENCE TAXONOMIES (No prefix, plural names)
+// =========================================================================
+
+Table countries {
+  id bigint [pk]
+  code varchar(10) [unique, not null]
+  name varchar(100) [not null]
+  phone_prefix varchar(10) [not null]
+  province_id bigint [not null]
+}
+
+Table regions {
+  id bigint [pk]
+  code varchar(10) [unique, not null]
+  name varchar(100) [not null]
+  country_id bigint [not null]
+}
+
+Table provinces {
+  id bigint [pk]
+  code varchar(10) [unique, not null]
+  name varchar(100) [not null]
+  region_id bigint [not null]
+}
+
+Table sports {
+  id bigint [pk]
+  code varchar(30) [unique, not null]
+  name varchar(100) [not null, note: 'Calcio a 11, Pallacanestro']
+  description varchar(255)
+  active boolean [not null]
+}
+
+Table categories {
+  id bigint [pk]
+  name varchar(100) [not null, note: 'Serie D, Under 19']
+  description varchar(255)
+}
+
+Table roles {
+  id bigint [pk]
+  code varchar(30) [unique, not null]
+  name varchar(100) [not null, note: 'Portiere, Ala']
+  description varchar(255)
+  type varchar(30) [not null, note: 'ATHLETE_ROLE, STAFF_ROLE']
+}
+
+Table skills {
+  id bigint [pk]
+  code varchar(50) [unique, not null]
+  name varchar(100) [not null]
+  description varchar(255)
+  data_type varchar(20) [not null, note: 'NUMBER, BOOLEAN, STRING']
+  min_value double
+  max_value double
+}
+
+// =========================================================================
+// 3. GDPR & HISTORICAL CONSENT REGISTRY
+// =========================================================================
+
+Table legal_documents {
+  id bigint [pk]
+  document_code varchar(50) [not null, note: 'PRIVACY_POLICY, TERMS_AND_CONDITIONS, etc.']
+  name varchar(100) [not null]
+  version varchar(20) [not null]
+  file_path varchar(255) [not null]
+  mandatory boolean [not null]
+  active boolean [not null]
+  published_at timestamp [not null]
+}
+
+Table account_consents {
+  id bigint [pk, increment]
+  account_id varchar(36) [not null]
+  legal_document_id bigint [not null]
+  consent_given boolean [not null]
+  signed_at timestamp [not null]
+  signed_by_guardian_account_id varchar(36) [note: 'Guardian account who signed on minor behalf']
+  ip_address varchar(45) [not null]
+}
+
+// =========================================================================
+// 4. UI & SYSTEM RUNTIME CONFIGURATIONS (`cfg_` Tables)
+// =========================================================================
+
+Table cfg_sport_attribute_definitions {
+  id bigint [pk]
+  sport_id bigint [not null]
+  attribute_code varchar(50) [not null]
+  type varchar(20) [not null, note: 'text, number, select, multiselect, checkbox, radio']
+  label_json json [not null, note: 'UI forms translations']
+  placeholder_json json
+  help_text_json json
+  columns integer [not null]
+  validators_json json [note: 'JSON matching FieldValidator[] (required, min, max, pattern)']
+  options_json json [note: 'JSON matching FieldOption[] list for select/multiselect']
+}
+
+Table cfg_sport_roles {
+  id bigint [pk]
+  sport_id bigint [not null]
+  role_id bigint [not null]
+}
+
+Table cfg_sport_category_skills {
+  id bigint [pk]
+  sport_id bigint [not null]
+  category_id bigint [not null]
+  skill_id bigint [not null]
+}
+
+// =========================================================================
+// 5. PROFILES & RELATIONSHIPS
+// =========================================================================
+
+Table profiles {
+  id varchar(36) [pk]
+  account_id varchar(36) [not null]
+  type varchar(20) [not null, note: 'ATHLETE, COMPANY, STAFF']
+  validation_status varchar(30) [not null, note: 'PENDING_REVIEW, APPROVED, REJECTED, FLAGGED_FOR_MANUAL_REVIEW']
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table profile_personal_infos {
+  id bigint [pk, increment]
+  profile_id varchar(36) [not null]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  gender varchar(10) [not null]
+  fiscal_code varchar(16) [unique, not null]
+  photo_remote_url varchar(255)
+  claimed_federated_player_id varchar(36) [note: 'FK link to fed_players.id']
+  sport_attributes json [note: 'Holds athletic properties formatted dynamically as fieldName:value']
+  parent_first_name varchar(50)
+  parent_last_name varchar(50)
+  parent_fiscal_code varchar(16)
+}
+
+Table profile_company_infos {
+  id bigint [pk, increment]
+  profile_id varchar(36) [not null]
+  business_name varchar(150) [not null]
+  vat_number varchar(11) [unique, not null]
+  legal_representative_name varchar(100) [not null]
+  legal_representative_fiscal_code varchar(16) [not null]
+  affiliation_coni_certificate varchar(255) [not null]
+}
+
+Table profile_addresses {
+  id bigint [pk, increment]
+  profile_id varchar(36) [not null]
+  street varchar(150) [not null]
+  civic_number varchar(10) [not null]
+  postal_code varchar(10)
+  country_id bigint [not null]
+}
+
+Table profile_documents {
+  id bigint [pk, increment]
+  profile_id varchar(36) [not null]
+  document_type varchar(30) [not null]
+  file_path varchar(255) [not null]
+  upload_timestamp timestamp [not null]
+  valid_until date
+}
+
+Table profile_guardian_relations {
+  id bigint [pk, increment]
+  guardian_account_id varchar(36) [not null]
+  minor_profile_id varchar(36) [not null]
+  status varchar(30) [not null]
+  linked_at timestamp [not null]
+  validation_notes varchar(255)
+}
+
+// =========================================================================
+// 6. CLUB TEAMS SYSTEM (Multi-Squadra)
+// =========================================================================
+
+Table teams {
+  id varchar(36) [pk]
+  company_profile_id varchar(36) [not null]
+  label varchar(100) [not null, note: 'e.g. Juniores, Prima Squadra']
+  sport_id bigint [not null]
+  category_id bigint [not null]
+  created_at timestamp
+}
+
+// =========================================================================
+// 7. FEDERATED SPORTS REGISTRY (`fed_` Tables)
+// =========================================================================
+
+Table fed_championships {
+  id varchar(36) [pk]
+  sport_id bigint [not null]
+  name varchar(150) [not null]
+  season varchar(15) [not null]
+  last_updated timestamp
+}
+
+Table fed_teams {
+  id varchar(36) [pk]
+  name varchar(100) [not null]
+  logo_url varchar(255)
+}
+
+Table fed_players {
+  id varchar(36) [pk]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  current_team_id varchar(36) [not null]
+  photo_url varchar(255)
+}
+
+Table fed_player_performances {
+  id bigint [pk, increment]
+  player_id varchar(36) [not null]
+  championship_id varchar(36) [not null]
+  goals integer [not null]
+  penalties integer [not null]
+  assists integer [not null]
+  caps integer [not null]
+  rating decimal(3,2) [not null]
+  last_updated timestamp
+}
+
+// =========================================================================
+// 8. AUDITING & VALIDATIONS
+// =========================================================================
+
+Table validation_records {
+  id bigint [pk, increment]
+  profile_id varchar(36) [not null]
+  verified_by varchar(50) [not null]
+  result varchar(30) [not null]
+  confidence_score decimal(3,2) [not null]
+  notes text
+  timestamp timestamp
+}
+
+// =========================================================================
+// 9. DATABASE RELATIONSHIPS (REFERENCES)
+// =========================================================================
+
+Ref: auth_methods.account_id > accounts.id [delete: cascade]
+Ref: account_identity_audit_logs.account_id > accounts.id [delete: cascade]
+
+Ref: countries.province_id > provinces.id
+Ref: regions.country_id > countries.id
+Ref: provinces.region_id > regions.id
+
+Ref: account_consents.account_id > accounts.id [delete: cascade]
+Ref: account_consents.legal_document_id > legal_documents.id
+Ref: account_consents.signed_by_guardian_account_id > accounts.id
+
+Ref: cfg_sport_attribute_definitions.sport_id > sports.id
+Ref: cfg_sport_roles.sport_id > sports.id
+Ref: cfg_sport_roles.role_id > roles.id
+Ref: cfg_sport_category_skills.sport_id > sports.id
+Ref: cfg_sport_category_skills.category_id > categories.id
+Ref: cfg_sport_category_skills.skill_id > skills.id
+
+Ref: profiles.account_id > accounts.id [delete: cascade]
+Ref: profile_personal_infos.profile_id > profiles.id [delete: cascade]
+Ref: profile_company_infos.profile_id > profiles.id [delete: cascade]
+Ref: profile_addresses.profile_id > profiles.id [delete: cascade]
+Ref: profile_documents.profile_id > profiles.id [delete: cascade]
+
+Ref: profile_addresses.country_id > countries.id
+
+Ref: profile_guardian_relations.guardian_account_id > accounts.id
+Ref: profile_guardian_relations.minor_profile_id > profiles.id
+
+Ref: teams.company_profile_id > profiles.id [delete: cascade]
+Ref: teams.sport_id > sports.id
+Ref: teams.category_id > categories.id
+
+Ref: fed_championships.sport_id > sports.id
+Ref: fed_players.current_team_id > fed_teams.id
+Ref: fed_player_performances.player_id > fed_players.id [delete: cascade]
+Ref: fed_player_performances.championship_id > fed_championships.id [delete: cascade]
+Ref: profile_personal_infos.claimed_federated_player_id > fed_players.id
+
+Ref: validation_records.profile_id > profiles.id [delete: cascade]
+
+// =========================================================================
+// 10. DUMMY / SAMPLE RECORDS (TAXONOMIES & MULTI-FIGLIO WORKFLOW)
+// =========================================================================
+
+Records sports(id, code, name, active) {
+  1, 'SOCCER_11', 'Calcio a 11', true
+  2, 'BASKETBALL', 'Pallacanestro', true
+}
+
+Records categories(id, name) {
+  10, 'Serie D'
+  20, 'Juniores Under 19'
+}
+
+Records accounts(id, email, username, birth_date, active, status, creation_provider, primary_provider, terms_consent, privacy_consent, marketing_consent, profiling_consent, consent_updated_at) {
+  'parent-uuid-001', 'genitore@gmail.com', 'mario_rossi', '1980-05-15', true, 'ACTIVE_VALIDATED', 'LOCAL', 'LOCAL', true, true, false, false, '2026-08-21 10:00:00'
+  'child1-uuid-002', 'figlio1@gmail.com', 'figlio_uno', '2013-09-20', true, 'ACTIVE_VALIDATED', 'LOCAL', 'GOOGLE', true, true, false, false, '2026-08-21 11:30:00'
+  'child2-uuid-003', 'figlio2@gmail.com', 'figlio_due', '2010-02-14', true, 'ACTIVE_VALIDATED', 'GOOGLE', 'GOOGLE', true, true, false, false, '2026-08-21 12:15:00'
+}
+
+Records profiles(id, account_id, type, validation_status) {
+  'p-parent-001', 'parent-uuid-001', 'STAFF', 'APPROVED'
+  'p-child1-002', 'child1-uuid-002', 'ATHLETE', 'APPROVED'
+  'p-child2-003', 'child2-uuid-003', 'ATHLETE', 'APPROVED'
+}
+
+Records profile_guardian_relations(id, guardian_account_id, minor_profile_id, status) {
+  100, 'parent-uuid-001', 'p-child1-002', 'LINKED'
+  101, 'parent-uuid-001', 'p-child2-003', 'LINKED'
+}
+
+Records auth_methods(id, account_id, provider, password_hash) {
+  1, 'parent-uuid-001', 'LOCAL', '$2a$12$4Lp...'
+  2, 'child1-uuid-002', 'LOCAL', null // Password sbiacata (disabled)
+  3, 'child1-uuid-002', 'GOOGLE', null
+  4, 'child1-uuid-002', 'INSTAGRAM', null
+  5, 'child2-uuid-003', 'GOOGLE', null
+}
